@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Decibels Website (`db_next`)
 
-## Getting Started
+Production-oriented Next.js site for an upscale classic rock band targeting bookings in Montgomery, Conroe, and Houston.
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS
+- Supabase (booking inquiry storage)
+- Local content abstraction for blog (ready to swap to Strapi later)
+- Netlify deployment target
+
+## Routes
+
+- `/` Home
+- `/media` Media (Cloudflare Stream + photo placeholders)
+- `/songs` Song list by category
+- `/shows` Upcoming shows (static data for MVP)
+- `/book` Booking inquiry form (Supabase insert)
+- `/epk` EPK placeholders
+- `/blog` Blog index
+- `/blog/[slug]` Blog post page
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Required:
 
-## Learn More
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-To learn more about Next.js, take a look at the following resources:
+Future (Strapi phase):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+STRAPI_URL=...
+STRAPI_TOKEN=...
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Supabase Setup
 
-## Deploy on Vercel
+1. Create a Supabase project.
+2. Run [`supabase_schema.sql`](./supabase_schema.sql) in SQL editor.
+3. Confirm `booking_inquiries` table exists and RLS policy allows anonymous inserts.
+4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` locally and in Netlify.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Blog Data Abstraction
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Blog data currently comes from local content under `src/content/blogPosts.ts`.
+App-level abstraction lives in `src/lib/posts.ts`:
+
+- `getPosts()`
+- `getPostBySlug(slug)`
+
+TODO markers are included where Strapi integration should replace local content.
+
+## Netlify
+
+This project includes `netlify.toml` with:
+
+- build command: `npm run build`
+- publish directory: `.next`
+- plugin: `@netlify/plugin-nextjs`
+
+Set environment variables in Netlify UI:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- (later) `STRAPI_URL`
+- (later) `STRAPI_TOKEN`
+
+## Domain + Netlify Setup
+
+Target production domain:
+
+- `thedecibels.thomasgrantmacdonald.com`
+
+Steps:
+
+1. In Netlify, add custom domain `thedecibels.thomasgrantmacdonald.com` to this site.
+2. In Cloudflare DNS for `thomasgrantmacdonald.com`, add a DNS record for subdomain `thedecibels`.
+3. Preferred record style: `CNAME` from `thedecibels` to your Netlify subdomain target (for example `<site-name>.netlify.app`).
+4. Alternate approach: if Netlify provides A record instructions for apex-like handling, follow Netlify docs, but for this subdomain a `CNAME` is the typical path.
+5. Wait for DNS propagation and verify Netlify marks the domain as active.
+6. SSL certificate issuance is handled by Netlify automatically after DNS validates.
+
+Notes:
+
+- The root/apex domain `thomasgrantmacdonald.com` does not need to change for this subdomain launch.
+- No separate landing page on `www.thomasgrantmacdonald.com` is required for subdomain hosting.
