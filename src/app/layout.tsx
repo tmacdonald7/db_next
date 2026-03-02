@@ -35,6 +35,7 @@ export default function RootLayout({
     { href: "/media", label: "Media" },
     { href: "/songs", label: "Song List" },
     { href: "/shows", label: "Shows" },
+    { href: "/contact", label: "Contact" },
     { href: "/book", label: "Booking" },
     { href: "/epk", label: "EPK" },
     { href: "/blog", label: "Blog" },

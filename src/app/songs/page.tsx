@@ -15,24 +15,25 @@ export default function SongsPage() {
     <div className="container">
       <section className="page-header">
         <h1>Song List</h1>
-        <p>Curated for quick review by venue managers, planners, and hosts selecting set direction.</p>
+        <p>Our current working set list is grouped for easy planning across different event moments.</p>
       </section>
 
       <section className="section">
         <SectionHeading
-          eyebrow="Repertoire Lanes"
-          title="Categorized for skimming"
-          description="Each lane supports a different room energy profile while preserving a classic rock identity."
+          eyebrow="Repertoire"
+          title="Song Categories"
+          description="Song titles are in italics and artist names are bold for faster scanning."
         />
-        <div className="grid lg:grid-cols-3">
+        <div className="grid md:grid-cols-2">
           {songCategories.map((category) => (
             <article key={category.title} className="panel">
               <h2 style={{ fontSize: "1.4rem", lineHeight: 1.2 }}>{category.title}</h2>
               <p style={{ marginTop: "0.55rem" }}>{category.description}</p>
-              <ul style={{ marginTop: "0.8rem", paddingLeft: "1.1rem" }}>
+              <ul className="song-list">
                 {category.songs.map((song) => (
-                  <li key={song} style={{ marginTop: "0.35rem" }}>
-                    {song}
+                  <li key={`${song.title}-${song.artist}`}>
+                    <span className="song-title">{song.title}</span> by{" "}
+                    <span className="song-artist">{song.artist}</span>
                   </li>
                 ))}
               </ul>

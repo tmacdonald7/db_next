@@ -16,6 +16,7 @@ Production-oriented Next.js site for an upscale classic rock band targeting book
 - `/media` Media (Cloudflare Stream + photo placeholders)
 - `/songs` Song list by category
 - `/shows` Upcoming shows (static data for MVP)
+- `/contact` Contact page
 - `/book` Booking inquiry form (Supabase insert)
 - `/epk` EPK placeholders
 - `/blog` Blog index

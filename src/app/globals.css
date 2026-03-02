@@ -219,6 +219,28 @@ a {
   color: #8e2c2c;
 }
 
+.song-list {
+  margin-top: 0.9rem;
+  padding-left: 1.15rem;
+  font-size: 0.95rem;
+}
+
+.song-list li {
+  margin-bottom: 0.45rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-title {
+  font-style: italic;
+}
+
+.song-artist {
+  font-weight: 700;
+}
+
 @media (max-width: 760px) {
   .nav-wrap {
     align-items: flex-start;
@@ -227,5 +249,9 @@ a {
 
   .site-nav {
     justify-content: flex-start;
+  }
+
+  .song-list li {
+    white-space: normal;
   }
 }
