@@ -5,15 +5,15 @@ export type VideoItem = {
 
 export const featuredVideos: VideoItem[] = [
   {
-    uid: "59cd40860ba99e3c0e3ce00e0df7dca2",
-    title: "Jealous Again (Guitar Cover) - Thomas Grant MacDonald",
+    uid: "16f4f6f8e9e3b3cfadf32b3701f95f86",
+    title: "Mahoney's Bar & Restaurant, The Woodlands, TX",
   },
   {
-    uid: "3d3a1ee333b01f65cbb7a479b05ee741",
-    title: "Cocaine (Guitar Cover) - Thomas Grant MacDonald",
+    uid: "4579037d0fa1f95ece89ca22f44f3277",
+    title: "19th Hole Grill & Bar, Spring, TX",
   },
   {
-    uid: "90346eabb0b8bea2fdab93bc97f4ae5b",
-    title: "Pink Cadillac (Guitar Cover) - Thomas Grant MacDonald",
+    uid: "3fa85f64f4f56f9dbe5f8ce7f9f4a111",
+    title: "The Rustic, Houston, TX",
   },
 ];

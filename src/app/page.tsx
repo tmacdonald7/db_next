@@ -22,23 +22,23 @@ type IdealForItem = {
 
 const idealFor: IdealForItem[] = [
   {
-    title: "Upscale patios and restaurant rooms",
-    description: "Balanced volume and polished pacing that supports hospitality service and guest conversation.",
+    title: "Upscale patios & established venues",
+    description: "Polished classic rock tailored for hospitality-driven environments.",
     icon: "patio",
   },
   {
-    title: "Country clubs and member events",
-    description: "Classic repertoire and professional stage presence tailored for club standards and member expectations.",
+    title: "Country clubs & member events",
+    description: "Professional stage presence and a repertoire that fits club standards.",
     icon: "club",
   },
   {
-    title: "Corporate receptions and client nights",
-    description: "Reliable set flow and clean production for networking-focused events and brand-safe entertainment.",
+    title: "Corporate receptions & client nights",
+    description: "Controlled volume, clean production, and reliable pacing for networking-focused events.",
     icon: "corporate",
   },
   {
-    title: "Private celebrations and milestone evenings",
-    description: "Personalized set energy that shifts from dinner ambience to singalong moments at the right time.",
+    title: "Private celebrations & milestone evenings",
+    description: "Energy that builds naturally — from dinner ambience to confident singalong moments.",
     icon: "private",
   },
 ];
@@ -108,8 +108,8 @@ export default function HomePage() {
       <section className="section">
         <SectionHeading
           eyebrow="Ideal For"
-          title="Designed for refined rooms"
-          description="Set lists and stage approach are built to support premium hospitality environments rather than loud bar-band pacing."
+          title="Upscale venues and hospitality spaces"
+          description="We perform classic rock with polish and control, keeping volume balanced so guests can enjoy the music without losing conversation, while our intentional set flow supports your staff and the overall atmosphere of your room."
         />
         <div className="grid md:grid-cols-2">
           {idealFor.map((item) => (
