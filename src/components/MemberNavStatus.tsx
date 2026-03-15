@@ -159,7 +159,7 @@ export function MemberNavStatus() {
   if (!sessionUser) {
     return (
       <Link href="/members/sign-in" className="members-nav-button">
-        Members Sign In
+        Sign In
       </Link>
     );
   }

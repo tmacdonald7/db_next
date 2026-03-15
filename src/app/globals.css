@@ -150,6 +150,84 @@ pre {
     inset 0 -1px 0 rgba(212, 163, 115, 0.08);
 }
 
+.site-utility-bar {
+  border-bottom: 1px solid rgba(212, 163, 115, 0.08);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(29, 36, 48, 0.94) 0%,
+      rgba(23, 28, 36, 0.92) 100%
+    );
+  padding-block: 0.22rem;
+}
+
+.utility-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.2rem;
+}
+
+.utility-cta-group,
+.utility-actions,
+.utility-socials {
+  display: flex;
+  align-items: center;
+}
+
+.utility-cta-group,
+.utility-actions {
+  gap: 0.65rem;
+}
+
+.utility-socials {
+  gap: 0.45rem;
+}
+
+.utility-cta-link {
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.92;
+  transition: color 180ms ease;
+}
+
+.utility-cta-link:hover {
+  color: var(--secondary);
+}
+
+.utility-social-link {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(212, 163, 115, 0.16);
+  display: grid;
+  place-items: center;
+  color: rgba(244, 239, 230, 0.9);
+  text-decoration: none;
+  background: rgba(18, 22, 29, 0.52);
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.utility-social-link svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+  display: block;
+}
+
+.utility-social-link:hover {
+  color: var(--foreground);
+  border-color: rgba(212, 163, 115, 0.34);
+  transform: translateY(-1px);
+}
+
 .site-header::after {
   content: "";
   position: absolute;
@@ -171,25 +249,34 @@ pre {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding-block: 0.95rem;
+  gap: 1.25rem;
+  min-height: 4.2rem;
+  padding-block: 0.34rem;
+}
+
+.brand-lockup {
+  display: grid;
+  gap: 0.16rem;
 }
 
 .brand-link {
   font-family: var(--font-display-primary);
-  font-size: 1.55rem;
+  display: inline-block;
+  font-size: 1.28rem;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--foreground);
+  white-space: nowrap;
 }
 
 .brand-tagline {
   font-family: var(--font-display-secondary);
-  font-size: 0.9rem;
-  letter-spacing: 0.07em;
+  margin-top: 0.08rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--secondary-soft);
   opacity: 0.92;
@@ -197,7 +284,7 @@ pre {
 
 .site-nav {
   display: flex;
-  gap: 0.85rem;
+  gap: 0.8rem;
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
@@ -206,12 +293,12 @@ pre {
 .nav-link {
   position: relative;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--foreground-muted);
   text-decoration: none;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.3rem 0.1rem;
+  letter-spacing: 0.04em;
+  padding: 0.22rem 0.08rem;
   transition:
     color 180ms ease,
     transform 180ms ease,
@@ -255,8 +342,8 @@ pre {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.45rem;
-  padding: 0.68rem 1rem;
+  min-height: 1.9rem;
+  padding: 0.44rem 0.82rem;
   border-radius: 999px;
   border: 1px solid rgba(212, 163, 115, 0.26);
   background: linear-gradient(
@@ -269,7 +356,7 @@ pre {
     0 12px 24px rgba(0, 0, 0, 0.18);
   color: var(--foreground);
   font-family: var(--font-display-secondary);
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   letter-spacing: 0.06em;
   text-decoration: none;
   text-transform: uppercase;
@@ -296,9 +383,9 @@ pre {
 .member-nav-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
-  min-height: 2.55rem;
-  padding: 0.48rem 0.68rem 0.48rem 0.5rem;
+  gap: 0.55rem;
+  min-height: 1.95rem;
+  padding: 0.22rem 0.54rem 0.22rem 0.28rem;
   border-radius: 999px;
   border: 1px solid rgba(212, 163, 115, 0.26);
   background: linear-gradient(
@@ -326,8 +413,8 @@ pre {
 }
 
 .member-nav-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: 1.42rem;
+  height: 1.42rem;
   border-radius: 999px;
   overflow: hidden;
   display: grid;
@@ -340,7 +427,7 @@ pre {
   );
   color: var(--foreground);
   font-family: var(--font-display-secondary);
-  font-size: 0.9rem;
+  font-size: 0.66rem;
   letter-spacing: 0.05em;
 }
 
@@ -356,7 +443,7 @@ pre {
 }
 
 .member-nav-label {
-  font-size: 0.84rem;
+  font-size: 0.72rem;
   line-height: 1.1;
   color: var(--foreground);
   max-width: 11rem;
@@ -367,7 +454,7 @@ pre {
 
 .member-nav-meta {
   font-family: var(--font-display-secondary);
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   line-height: 1;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -380,10 +467,10 @@ pre {
   background: rgba(18, 22, 29, 0.84);
   color: var(--foreground-muted);
   font-family: var(--font-display-secondary);
-  font-size: 0.82rem;
+  font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 0.62rem 0.88rem;
+  padding: 0.42rem 0.72rem;
   transition:
     color 180ms ease,
     border-color 180ms ease,
@@ -1362,10 +1449,24 @@ pre {
   .nav-wrap {
     align-items: flex-start;
     flex-direction: column;
+    min-height: unset;
   }
 
   .site-nav {
     justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .utility-wrap,
+  .utility-cta-group,
+  .utility-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .utility-wrap {
+    align-items: flex-start;
+    padding-block: 0.55rem;
   }
 
   .members-nav-button {
