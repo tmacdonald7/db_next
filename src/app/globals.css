@@ -1335,7 +1335,49 @@ pre {
   counter-reset: setlist;
 }
 
+.active-set-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.active-set-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+}
+
+.active-set-card-overflow {
+  grid-column: 1 / -1;
+}
+
+.active-set-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(212, 163, 115, 0.1);
+}
+
+.active-set-card + .active-set-card {
+  padding-top: 0.2rem;
+}
+
+.active-set-heading h3 {
+  font-size: 1rem;
+  color: var(--foreground);
+}
+
+.active-set-heading span {
+  color: var(--foreground-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .song-board-row {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) auto auto;
   gap: 0.7rem;
@@ -1351,6 +1393,35 @@ pre {
 
 .song-board-row.is-draggable {
   cursor: grab;
+}
+
+.song-board-row.is-drop-target-before::before,
+.song-board-row.is-drop-target-after::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(212, 163, 115, 0.18) 0%,
+    rgba(200, 90, 17, 0.95) 18%,
+    rgba(200, 90, 17, 0.95) 82%,
+    rgba(212, 163, 115, 0.18) 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(212, 163, 115, 0.06),
+    0 0 18px rgba(200, 90, 17, 0.16);
+  pointer-events: none;
+}
+
+.song-board-row.is-drop-target-before::before {
+  top: -0.25rem;
+}
+
+.song-board-row.is-drop-target-after::after {
+  bottom: -0.25rem;
 }
 
 .song-board-main {
@@ -1377,11 +1448,20 @@ pre {
 }
 
 .song-drag-handle {
-  font-family: var(--font-display-secondary);
-  letter-spacing: 0.08em;
   color: var(--secondary);
   opacity: 0.72;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  flex: 0 0 1rem;
+}
+
+.song-drag-handle svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: currentColor;
+  display: block;
 }
 
 .song-board-copy {
@@ -1688,6 +1768,10 @@ pre {
   .songs-suggestion-form,
   .song-board-row,
   .members-sign-in-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .active-set-grid {
     grid-template-columns: 1fr;
   }
 

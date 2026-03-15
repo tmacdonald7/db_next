@@ -47,6 +47,12 @@ type SongMemberStatus = {
 };
 
 type FilterMode = "all" | "my_weak_spots" | "ready" | "learning";
+type SongBucket = "active" | "suggested" | "archived";
+type DropIndicator = {
+  songId: string;
+  bucket: SongBucket;
+  position: "before" | "after";
+};
 
 function matchesCurrentMember(member: BandMember, user: SessionUser | null) {
   if (!user) {
@@ -71,6 +77,16 @@ function getMemberInitials(name: string) {
     .toUpperCase();
 }
 
+function getSongBucket(song: SongRecord): SongBucket {
+  if (song.status === "suggested") {
+    return "suggested";
+  }
+  if (song.status === "archived") {
+    return "archived";
+  }
+  return "active";
+}
+
 export function SongsBoard() {
   const [supabase, setSupabase] = useState<ReturnType<
     typeof createSupabaseBrowserClient
@@ -89,6 +105,8 @@ export function SongsBoard() {
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [dragSongId, setDragSongId] = useState<string | null>(null);
+  const [dragBucket, setDragBucket] = useState<SongBucket | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
@@ -149,20 +167,19 @@ export function SongsBoard() {
     setErrorMessage(null);
 
     try {
-      const [membersResult, songsResult, statusesResult] =
-        await Promise.all([
-          client
-            .from("band_members")
-            .select("id, display_name, instrument, email, phone, avatar_url, is_admin")
-            .order("created_at", { ascending: true }),
-          client
-            .from("songs")
-            .select("id, slug, title, artist, status, sort_order, suggested_by_member_id, notes")
-            .order("status", { ascending: true })
-            .order("sort_order", { ascending: true })
-            .order("title", { ascending: true }),
-          client.from("song_member_statuses").select("song_id, member_id, confidence"),
-        ]);
+      const [membersResult, songsResult, statusesResult] = await Promise.all([
+        client
+          .from("band_members")
+          .select("id, display_name, instrument, email, phone, avatar_url, is_admin")
+          .order("created_at", { ascending: true }),
+        client
+          .from("songs")
+          .select("id, slug, title, artist, status, sort_order, suggested_by_member_id, notes")
+          .order("status", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .order("title", { ascending: true }),
+        client.from("song_member_statuses").select("song_id, member_id, confidence"),
+      ]);
 
       if (membersResult.error) {
         throw membersResult.error;
@@ -173,6 +190,7 @@ export function SongsBoard() {
       if (statusesResult.error) {
         throw statusesResult.error;
       }
+
       setMembers(membersResult.data ?? []);
       setSongs(songsResult.data ?? []);
       setStatuses(statusesResult.data ?? []);
@@ -258,14 +276,20 @@ export function SongsBoard() {
   const activeSongs = filteredSongs
     .filter((song) => song.status === "active" || song.status === "selected")
     .sort((left, right) => left.sort_order - right.sort_order);
-  const suggestedSongs = filteredSongs.filter((song) => song.status === "suggested");
-  const archivedSongs = filteredSongs.filter((song) => song.status === "archived");
+  const suggestedSongs = filteredSongs
+    .filter((song) => song.status === "suggested")
+    .sort((left, right) => left.sort_order - right.sort_order);
+  const archivedSongs = filteredSongs
+    .filter((song) => song.status === "archived")
+    .sort((left, right) => left.sort_order - right.sort_order);
+  const activeSets = Array.from({ length: 4 }, (_value, index) => ({
+    label: `Set ${index + 1}`,
+    songs: activeSongs.slice(index * 10, index * 10 + 10),
+  }));
+  const additionalActiveSongs = activeSongs.slice(40);
 
   async function updateConfidence(songId: string, confidence: SongConfidence) {
-    if (!currentMember) {
-      return;
-    }
-    if (!supabase) {
+    if (!currentMember || !supabase) {
       return;
     }
 
@@ -315,10 +339,7 @@ export function SongsBoard() {
   async function handleSuggestionSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!currentMember) {
-      return;
-    }
-    if (!supabase) {
+    if (!currentMember || !supabase) {
       return;
     }
 
@@ -357,10 +378,10 @@ export function SongsBoard() {
       setSongs((current) => [...current, data]);
       setSuggestionTitle("");
       setSuggestionArtist("");
-      setStatusMessage("Suggestion added.");
+      setStatusMessage("Suggested song added.");
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to add the suggestion.",
+        error instanceof Error ? error.message : "Unable to add the suggested song.",
       );
     } finally {
       setBusyKey(null);
@@ -373,19 +394,40 @@ export function SongsBoard() {
     }
 
     const client = supabase;
+    const nextBucket = status === "suggested" ? suggestedSongs : activeSongs;
+    const nextSortOrder = nextBucket.length;
+
     setBusyKey(`stage:${songId}:${status}`);
     setErrorMessage(null);
     setStatusMessage(null);
 
     try {
-      const { error } = await client.from("songs").update({ status }).eq("id", songId);
+      const { error } = await client
+        .from("songs")
+        .update({
+          status,
+          sort_order:
+            status === "active" || status === "suggested" ? nextSortOrder : 0,
+        })
+        .eq("id", songId);
 
       if (error) {
         throw error;
       }
 
       setSongs((current) =>
-        current.map((song) => (song.id === songId ? { ...song, status } : song)),
+        current.map((song) =>
+          song.id === songId
+            ? {
+                ...song,
+                status,
+                sort_order:
+                  status === "active" || status === "suggested"
+                    ? nextSortOrder
+                    : song.sort_order,
+              }
+            : song,
+        ),
       );
       setStatusMessage("Song status updated.");
     } catch (error) {
@@ -398,10 +440,7 @@ export function SongsBoard() {
   }
 
   async function importDefaultSongs() {
-    if (!currentMember?.is_admin) {
-      return;
-    }
-    if (!supabase) {
+    if (!currentMember?.is_admin || !supabase) {
       return;
     }
 
@@ -436,34 +475,41 @@ export function SongsBoard() {
     }
   }
 
-  async function moveSelectedSong(draggedSongId: string, targetSongId: string) {
-    if (!currentMember?.is_admin || draggedSongId === targetSongId) {
-      return;
-    }
-    if (!supabase) {
+  async function moveSongsWithinBucket(
+    bucket: SongBucket,
+    draggedSongId: string,
+    targetSongId: string,
+    position: "before" | "after",
+  ) {
+    if (!currentMember?.is_admin || !supabase) {
       return;
     }
 
     const client = supabase;
-    const selectedOnly = songs
-      .filter((song) => song.status === "selected")
+    const bucketSongs = songs
+      .filter((song) => getSongBucket(song) === bucket)
       .sort((left, right) => left.sort_order - right.sort_order);
-    const draggedIndex = selectedOnly.findIndex((song) => song.id === draggedSongId);
-    const targetIndex = selectedOnly.findIndex((song) => song.id === targetSongId);
+    const draggedIndex = bucketSongs.findIndex((song) => song.id === draggedSongId);
+    const targetIndex = bucketSongs.findIndex((song) => song.id === targetSongId);
 
     if (draggedIndex < 0 || targetIndex < 0) {
       return;
     }
 
-    const reordered = [...selectedOnly];
+    const reordered = [...bucketSongs];
     const [draggedSong] = reordered.splice(draggedIndex, 1);
-    reordered.splice(targetIndex, 0, draggedSong);
+    const adjustedTargetIndex =
+      draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    const insertionIndex =
+      position === "after" ? adjustedTargetIndex + 1 : adjustedTargetIndex;
+
+    reordered.splice(insertionIndex, 0, draggedSong);
     const updates = reordered.map((song, index) => ({
       id: song.id,
       sort_order: index,
     }));
 
-    setBusyKey("reorder:selected");
+    setBusyKey(`reorder:${bucket}`);
     setErrorMessage(null);
     setStatusMessage(null);
 
@@ -482,14 +528,22 @@ export function SongsBoard() {
           return next ? { ...song, sort_order: next.sort_order } : song;
         }),
       );
-      setStatusMessage("Selected order updated.");
+      setStatusMessage(
+        bucket === "active"
+          ? "Active set order updated."
+          : bucket === "suggested"
+            ? "Suggested songs order updated."
+            : "Archived song order updated.",
+      );
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to reorder selected songs.",
+        error instanceof Error ? error.message : "Unable to reorder songs.",
       );
     } finally {
       setBusyKey(null);
       setDragSongId(null);
+      setDragBucket(null);
+      setDropIndicator(null);
     }
   }
 
@@ -498,20 +552,68 @@ export function SongsBoard() {
     const currentConfidence = currentMember
       ? confidenceMap.get(currentMember.id) ?? "dont_know"
       : "dont_know";
+    const songBucket = getSongBucket(song);
+    const isDraggable =
+      Boolean(currentMember?.is_admin) &&
+      (songBucket === "active" || songBucket === "suggested");
+    const rowDropPosition =
+      dropIndicator?.songId === song.id && dropIndicator.bucket === songBucket
+        ? dropIndicator.position
+        : null;
+
     return (
       <li
         key={song.id}
-        className={`song-board-row${currentMember?.is_admin && song.status === "selected" ? " is-draggable" : ""}`}
-        draggable={Boolean(currentMember?.is_admin && song.status === "selected")}
-        onDragStart={() => setDragSongId(song.id)}
+        className={`song-board-row${isDraggable ? " is-draggable" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
+        draggable={isDraggable}
+        onDragStart={() => {
+          setDragSongId(song.id);
+          setDragBucket(songBucket);
+          setDropIndicator(null);
+        }}
+        onDragEnd={() => {
+          setDragSongId(null);
+          setDragBucket(null);
+          setDropIndicator(null);
+        }}
         onDragOver={(event) => {
-          if (currentMember?.is_admin && song.status === "selected") {
+          if (isDraggable && dragBucket === songBucket) {
             event.preventDefault();
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const position =
+              event.clientY - bounds.top < bounds.height / 2 ? "before" : "after";
+
+            setDropIndicator({
+              songId: song.id,
+              bucket: songBucket,
+              position,
+            });
           }
         }}
+        onDragLeave={(event) => {
+          if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            return;
+          }
+
+          setDropIndicator((current) =>
+            current?.songId === song.id && current.bucket === songBucket
+              ? null
+              : current,
+          );
+        }}
         onDrop={() => {
-          if (dragSongId) {
-            void moveSelectedSong(dragSongId, song.id);
+          if (
+            dragSongId &&
+            dragBucket === songBucket &&
+            dropIndicator?.songId === song.id &&
+            dropIndicator.bucket === songBucket
+          ) {
+            void moveSongsWithinBucket(
+              songBucket,
+              dragSongId,
+              song.id,
+              dropIndicator.position,
+            );
           }
         }}
       >
@@ -521,9 +623,16 @@ export function SongsBoard() {
               {String(index + 1).padStart(2, "0")}
             </span>
           ) : null}
-          {currentMember?.is_admin && song.status === "selected" ? (
+          {isDraggable ? (
             <span className="song-drag-handle" aria-hidden="true">
-              ≡
+              <svg viewBox="0 0 16 16" focusable="false">
+                <circle cx="5" cy="4" r="1.2" />
+                <circle cx="11" cy="4" r="1.2" />
+                <circle cx="5" cy="8" r="1.2" />
+                <circle cx="11" cy="8" r="1.2" />
+                <circle cx="5" cy="12" r="1.2" />
+                <circle cx="11" cy="12" r="1.2" />
+              </svg>
             </span>
           ) : null}
           <div className="song-board-copy">
@@ -591,6 +700,17 @@ export function SongsBoard() {
                 Add To Active
               </button>
             ) : null}
+            {currentMember?.is_admin &&
+            (song.status === "active" || song.status === "selected") ? (
+              <button
+                type="button"
+                className="vote-chip"
+                disabled={busyKey === `stage:${song.id}:suggested`}
+                onClick={() => void updateSongStage(song.id, "suggested")}
+              >
+                Move To Suggested
+              </button>
+            ) : null}
             {currentMember?.is_admin && song.status === "archived" ? (
               <button
                 type="button"
@@ -599,6 +719,16 @@ export function SongsBoard() {
                 onClick={() => void updateSongStage(song.id, "active")}
               >
                 Restore To Active
+              </button>
+            ) : null}
+            {currentMember?.is_admin && song.status === "archived" ? (
+              <button
+                type="button"
+                className="vote-chip"
+                disabled={busyKey === `stage:${song.id}:suggested`}
+                onClick={() => void updateSongStage(song.id, "suggested")}
+              >
+                Restore To Suggested
               </button>
             ) : null}
             {currentMember?.is_admin && song.status !== "archived" ? (
@@ -688,8 +818,9 @@ export function SongsBoard() {
             <h2>Band Repertoire Board</h2>
           </div>
           <p className="songs-auth-copy">
-            Active songs are the current expectation, selected songs are the next wave,
-            and suggestions are where members can lobby for additions.
+            The active set list is grouped into four ten-song sets. Suggested songs
+            stay in their own reorderable queue until they are moved into the active
+            list.
           </p>
         </div>
         <div className="song-board-actions">
@@ -785,14 +916,43 @@ export function SongsBoard() {
 
       <article className="panel section">
         <div className="section-heading">
-          <h2>Active Set</h2>
+          <h2>Active Set List</h2>
         </div>
         {loading ? (
           <p className="songs-auth-copy">Loading the current working set...</p>
         ) : activeSongs.length > 0 ? (
-          <ol className="songs-board-list songs-board-list-numbered">
-            {activeSongs.map((song, index) => renderSongRow(song, index))}
-          </ol>
+          <div className="active-set-grid">
+            {activeSets.map((setGroup) => (
+              <section key={setGroup.label} className="active-set-card">
+                <div className="active-set-heading">
+                  <h3>{setGroup.label}</h3>
+                  <span>{setGroup.songs.length}/10 songs</span>
+                </div>
+                {setGroup.songs.length > 0 ? (
+                  <ol className="songs-board-list songs-board-list-numbered">
+                    {setGroup.songs.map((song, index) =>
+                      renderSongRow(song, (Number(setGroup.label.split(" ")[1]) - 1) * 10 + index),
+                    )}
+                  </ol>
+                ) : (
+                  <p className="songs-auth-copy">No songs in this set yet.</p>
+                )}
+              </section>
+            ))}
+            {additionalActiveSongs.length > 0 ? (
+              <section className="active-set-card active-set-card-overflow">
+                <div className="active-set-heading">
+                  <h3>Additional Songs</h3>
+                  <span>{additionalActiveSongs.length} overflow</span>
+                </div>
+                <ol className="songs-board-list songs-board-list-numbered">
+                  {additionalActiveSongs.map((song, index) =>
+                    renderSongRow(song, 40 + index),
+                  )}
+                </ol>
+              </section>
+            ) : null}
+          </div>
         ) : (
           <p className="songs-auth-copy">No active songs match this view yet.</p>
         )}
@@ -800,12 +960,14 @@ export function SongsBoard() {
 
       <article className="panel section">
         <div className="section-heading">
-          <h2>Suggestions</h2>
+          <h2>Suggested Songs</h2>
         </div>
         {suggestedSongs.length > 0 ? (
-          <ul className="songs-board-list">{suggestedSongs.map(renderSongRow)}</ul>
+          <ul className="songs-board-list">{suggestedSongs.map((song) => renderSongRow(song))}</ul>
         ) : (
-          <p className="songs-auth-copy">No suggestions yet. Add one above to get the queue started.</p>
+          <p className="songs-auth-copy">
+            No suggested songs yet. Add one above to get the queue started.
+          </p>
         )}
       </article>
 
@@ -815,7 +977,7 @@ export function SongsBoard() {
             <h2>Archived Songs</h2>
           </div>
           {archivedSongs.length > 0 ? (
-            <ul className="songs-board-list">{archivedSongs.map(renderSongRow)}</ul>
+            <ul className="songs-board-list">{archivedSongs.map((song) => renderSongRow(song))}</ul>
           ) : (
             <p className="songs-auth-copy">No archived songs right now.</p>
           )}
