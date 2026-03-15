@@ -1,41 +1,5 @@
 create extension if not exists "pgcrypto";
 
-create or replace function public.current_band_member_id()
-returns uuid
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select member.id
-  from public.band_members member
-  where (
-    auth.jwt() ->> 'email' is not null
-    and member.email is not null
-    and lower(member.email) = lower(auth.jwt() ->> 'email')
-  ) or (
-    auth.jwt() ->> 'phone' is not null
-    and member.phone is not null
-    and member.phone = auth.jwt() ->> 'phone'
-  )
-  limit 1;
-$$;
-
-create or replace function public.current_band_member_is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.band_members member
-    where member.id = public.current_band_member_id()
-      and member.is_admin = true
-  );
-$$;
-
 create table if not exists public.booking_inquiries (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -101,6 +65,42 @@ create table if not exists public.band_members (
   is_admin boolean not null default false,
   constraint band_members_contact_required check (email is not null or phone is not null)
 );
+
+create or replace function public.current_band_member_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select member.id
+  from public.band_members member
+  where (
+    auth.jwt() ->> 'email' is not null
+    and member.email is not null
+    and lower(member.email) = lower(auth.jwt() ->> 'email')
+  ) or (
+    auth.jwt() ->> 'phone' is not null
+    and member.phone is not null
+    and member.phone = auth.jwt() ->> 'phone'
+  )
+  limit 1;
+$$;
+
+create or replace function public.current_band_member_is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.band_members member
+    where member.id = public.current_band_member_id()
+      and member.is_admin = true
+  );
+$$;
 
 create table if not exists public.songs (
   id uuid primary key default gen_random_uuid(),

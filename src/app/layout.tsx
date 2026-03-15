@@ -3,6 +3,7 @@ import { Bebas_Neue, Montserrat, Oswald } from "next/font/google";
 import Link from "next/link";
 import { bandName, brandTagline } from "@/lib/brand";
 import { themeTokens } from "@/app/style-guide/page";
+import { MemberNavStatus } from "@/components/MemberNavStatus";
 import { SiteNavLink } from "@/components/SiteNavLink";
 import "./globals.css";
 
@@ -121,9 +122,7 @@ export default function RootLayout({
                     {item.label}
                   </SiteNavLink>
                 ))}
-                <Link href="/members/sign-in" className="members-nav-button">
-                  Members Sign In
-                </Link>
+                <MemberNavStatus />
               </nav>
             </div>
           </header>
