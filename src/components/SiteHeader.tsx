@@ -92,6 +92,21 @@ export function SiteHeader() {
               {item.label}
             </SiteNavLink>
           ))}
+          <div className="site-nav-mobile-tools">
+            <div className="utility-socials" aria-label="Social links">
+              {socialLinks.map((item) => (
+                <Link
+                  key={`mobile-${item.label}`}
+                  href={item.href}
+                  className="utility-social-link"
+                  aria-label={item.label}
+                >
+                  {socialIcons[item.icon]}
+                </Link>
+              ))}
+            </div>
+            <MemberNavStatus />
+          </div>
         </nav>
       </div>
     </header>
