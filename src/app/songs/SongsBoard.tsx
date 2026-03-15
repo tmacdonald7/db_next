@@ -54,6 +54,23 @@ type DropIndicator = {
   position: "before" | "after";
 };
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 function matchesCurrentMember(member: BandMember, user: SessionUser | null) {
   if (!user) {
     return false;
@@ -195,11 +212,7 @@ export function SongsBoard() {
       setSongs(songsResult.data ?? []);
       setStatuses(statusesResult.data ?? []);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to load the songs board right now.",
-      );
+      setErrorMessage(getErrorMessage(error, "Unable to load the songs board right now."));
     } finally {
       setLoading(false);
     }
@@ -328,9 +341,7 @@ export function SongsBoard() {
       });
       setStatusMessage("Confidence updated.");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to update confidence.",
-      );
+      setErrorMessage(getErrorMessage(error, "Unable to update confidence."));
     } finally {
       setBusyKey(null);
     }
@@ -380,9 +391,7 @@ export function SongsBoard() {
       setSuggestionArtist("");
       setStatusMessage("Suggested song added.");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to add the suggested song.",
-      );
+      setErrorMessage(getErrorMessage(error, "Unable to add the suggested song."));
     } finally {
       setBusyKey(null);
     }
@@ -431,9 +440,7 @@ export function SongsBoard() {
       );
       setStatusMessage("Song status updated.");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to update song status.",
-      );
+      setErrorMessage(getErrorMessage(error, "Unable to update song status."));
     } finally {
       setBusyKey(null);
     }
@@ -467,9 +474,7 @@ export function SongsBoard() {
       await loadBoard();
       setStatusMessage("Current repertoire imported.");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to import songs.",
-      );
+      setErrorMessage(getErrorMessage(error, "Unable to import songs."));
     } finally {
       setBusyKey(null);
     }
@@ -514,12 +519,16 @@ export function SongsBoard() {
     setStatusMessage(null);
 
     try {
-      const { error } = await client.from("songs").upsert(updates, {
-        onConflict: "id",
-      });
+      const results = await Promise.all(
+        updates.map((update) =>
+          client.from("songs").update({ sort_order: update.sort_order }).eq("id", update.id),
+        ),
+      );
 
-      if (error) {
-        throw error;
+      const failedResult = results.find((result) => result.error);
+
+      if (failedResult?.error) {
+        throw failedResult.error;
       }
 
       setSongs((current) =>
@@ -536,9 +545,7 @@ export function SongsBoard() {
             : "Archived song order updated.",
       );
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to reorder songs.",
-      );
+      setErrorMessage(getErrorMessage(error, "Unable to reorder songs."));
     } finally {
       setBusyKey(null);
       setDragSongId(null);
