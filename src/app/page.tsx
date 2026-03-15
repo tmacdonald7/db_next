@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { StreamVideo } from "@/components/StreamVideo";
 import { SectionHeading } from "@/components/sections/SectionHeading";
+import { WaveformMotif } from "@/components/WaveformMotif";
 import { testimonials } from "@/content/testimonials";
 import { featuredVideos } from "@/content/videos";
 import { bandName, brandTagline, ctaLabels } from "@/lib/brand";
@@ -42,7 +43,7 @@ const idealFor: IdealForItem[] = [
   {
     title: "Private celebrations & milestone evenings",
     description:
-      "Energy that builds naturally — from dinner ambience to confident singalong moments.",
+      "Energy that builds naturally from dinner ambience to confident singalong moments.",
     icon: "private",
   },
 ];
@@ -115,12 +116,32 @@ export default function HomePage() {
   return (
     <div className="container">
       <section className="page-header">
+        <WaveformMotif />
+        <div className="hero-panel-glow" />
         <p className="eyebrow">Montgomery | Conroe | Houston</p>
         <h1>{bandName}</h1>
         <p>
           {brandTagline} Built for venues that value strong musicianship, clean
           presentation, and reliable event execution.
         </p>
+        <div className="hero-support">
+          <div className="hero-badge-row">
+            <span className="hero-badge">
+              <span className="signal-dots" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+              <strong>Classic Rock</strong> tuned for premium rooms
+            </span>
+            <span className="hero-badge">
+              <strong>Clean Stage Presence</strong> and controlled volume
+            </span>
+            <span className="hero-badge">
+              <strong>Venue-ready</strong> load-in, pacing, and professionalism
+            </span>
+          </div>
+        </div>
         <div className="cta-row">
           <Link href="/book" className="button-primary">
             {ctaLabels.primary}
@@ -137,6 +158,14 @@ export default function HomePage() {
           title="Live clips from recent sets"
           description="Replace these placeholder Cloudflare Stream IDs with your final library as soon as media is approved."
         />
+        <div className="hero-badge-row" style={{ marginBottom: "1rem" }}>
+          <span className="hero-badge">
+            <strong>Warm-room energy</strong> without crowding the room
+          </span>
+          <span className="hero-badge">
+            <strong>Classic material</strong> with a polished live feel
+          </span>
+        </div>
         <div className="grid md:grid-cols-2 xl:grid-cols-3">
           {featuredVideos.map((video) => (
             <StreamVideo key={video.uid} uid={video.uid} title={video.title} />
@@ -154,6 +183,7 @@ export default function HomePage() {
           {idealFor.map((item) => (
             <article key={item.title} className="panel">
               <span
+                className="motif-ring"
                 aria-hidden="true"
                 style={{
                   display: "inline-flex",
@@ -163,9 +193,10 @@ export default function HomePage() {
                   height: "2rem",
                   borderRadius: "999px",
                   border: "1px solid var(--border)",
-                  color: "var(--accent-deep)",
+                  color: "var(--secondary-soft)",
                   background:
-                    "color-mix(in srgb, var(--surface-muted) 82%, #fff)",
+                    "color-mix(in srgb, var(--surface-muted) 92%, var(--highlight))",
+                  boxShadow: "var(--shadow-glow)",
                 }}
               >
                 <IdealForIcon icon={item.icon} />
@@ -179,7 +210,9 @@ export default function HomePage() {
               >
                 {item.title}
               </h3>
-              <p style={{ marginTop: "0.55rem" }}>{item.description}</p>
+              <p style={{ marginTop: "0.55rem", color: "var(--foreground-muted)" }}>
+                {item.description}
+              </p>
             </article>
           ))}
         </div>
@@ -193,15 +226,20 @@ export default function HomePage() {
         />
         <div className="grid md:grid-cols-3">
           {testimonials.map((testimonial) => (
-            <article key={testimonial.source} className="panel">
-              <p style={{ fontStyle: "italic" }}>
+            <article key={testimonial.source} className="panel testimonial-card">
+              <span className="testimonial-mark" aria-hidden="true">
+                "
+              </span>
+              <p style={{ fontStyle: "italic", color: "var(--foreground-muted)" }}>
                 &quot;{testimonial.quote}&quot;
               </p>
               <p
+                className="testimonial-source"
                 style={{
                   marginTop: "0.7rem",
                   fontSize: "0.9rem",
                   fontWeight: 600,
+                  color: "var(--secondary-soft)",
                 }}
               >
                 {testimonial.source}
@@ -211,12 +249,30 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section panel" style={{ marginBottom: "1rem" }}>
+      <section
+        className="section panel booking-panel"
+        style={{
+          marginBottom: "1rem",
+          background:
+            "radial-gradient(circle at top left, rgba(212, 163, 115, 0.12) 0, transparent 26%), linear-gradient(135deg, rgba(200, 90, 17, 0.1) 0%, rgba(29, 36, 48, 0.9) 48%, rgba(11, 13, 16, 1) 100%)",
+        }}
+      >
         <SectionHeading
           eyebrow="Booking"
           title="Secure your date now"
           description="Use the booking form to share event details, timeline, and budget range so we can respond with an exact-fit quote."
         />
+        <div className="booking-pill-row" style={{ marginBottom: "0.95rem" }}>
+          <span className="booking-pill">
+            <strong>Fast response</strong> for serious booking inquiries
+          </span>
+          <span className="booking-pill">
+            <strong>Set pacing</strong> designed around your room
+          </span>
+          <span className="booking-pill">
+            <strong>Professional execution</strong> from load-in to encore
+          </span>
+        </div>
         <div className="cta-row">
           <Link href="/book" className="button-primary">
             {ctaLabels.primary}

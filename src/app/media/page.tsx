@@ -45,8 +45,20 @@ export default function MediaPage() {
         />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3">
           {photoPlaceholders.map((photo) => (
-            <article key={photo} className="panel" style={{ minHeight: "10rem", display: "grid", placeItems: "center" }}>
-              <p style={{ textAlign: "center", color: "color-mix(in srgb, var(--foreground) 70%, #fff)" }}>{photo}</p>
+            <article
+              key={photo}
+              className="panel media-card motif-ring"
+              style={{ minHeight: "10rem", display: "grid", placeItems: "center" }}
+            >
+              <p
+                style={{
+                  textAlign: "center",
+                  color: "var(--foreground-muted)",
+                  maxWidth: "18ch",
+                }}
+              >
+                {photo}
+              </p>
             </article>
           ))}
         </div>

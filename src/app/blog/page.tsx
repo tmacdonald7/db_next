@@ -26,7 +26,7 @@ export default async function BlogPage() {
               {post.city} | {post.publishedAt}
             </p>
             <h2 style={{ fontSize: "1.4rem", lineHeight: 1.2, marginTop: "0.3rem" }}>{post.title}</h2>
-            <p style={{ marginTop: "0.55rem" }}>{post.excerpt}</p>
+            <p style={{ marginTop: "0.55rem", color: "var(--foreground-muted)" }}>{post.excerpt}</p>
             <Link href={`/blog/${post.slug}`} className="button-secondary" style={{ marginTop: "0.85rem" }}>
               Read article
             </Link>

@@ -5,16 +5,8 @@ type StreamVideoProps = {
 
 export function StreamVideo({ uid, title = "Performance video" }: StreamVideoProps) {
   return (
-    <div className="panel">
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          paddingTop: "56.25%",
-          overflow: "hidden",
-          borderRadius: "0.75rem",
-        }}
-      >
+    <div className="panel media-card">
+      <div className="media-frame motif-ring">
         <iframe
           src={`https://iframe.videodelivery.net/${uid}`}
           title={title}
@@ -30,7 +22,7 @@ export function StreamVideo({ uid, title = "Performance video" }: StreamVideoPro
           }}
         />
       </div>
-      <p style={{ marginTop: "0.75rem", fontSize: "0.95rem", fontWeight: 600 }}>{title}</p>
+      <p className="media-title">{title}</p>
     </div>
   );
 }

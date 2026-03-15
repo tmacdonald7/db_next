@@ -25,7 +25,8 @@ export default function ShowsPage() {
             <article key={show.id} className="panel">
               <h2 style={{ fontSize: "1.3rem", lineHeight: 1.2 }}>{show.venue}</h2>
               <p style={{ marginTop: "0.4rem" }}>
-                <strong>Date:</strong> {show.date} | <strong>City:</strong> {show.city}
+                <span className="date-block">Date: {show.date}</span> |{" "}
+                <span className="date-block">City: {show.city}</span>
               </p>
               <p style={{ marginTop: "0.45rem" }}>{show.notes}</p>
             </article>
