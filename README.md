@@ -14,7 +14,7 @@ Production-oriented Next.js site for an upscale classic rock band targeting book
 
 - `/` Home
 - `/media` Media (Cloudflare Stream + photo placeholders)
-- `/songs` Song list by category
+- `/songs` Internal band repertoire board with confidence tracking, suggestions, and admin ordering
 - `/shows` Upcoming shows (static data for MVP)
 - `/contact` Contact page
 - `/book` Booking inquiry form (Supabase insert)
@@ -39,6 +39,7 @@ Required:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
 
 Future (Strapi phase):
@@ -52,8 +53,23 @@ STRAPI_TOKEN=...
 
 1. Create a Supabase project.
 2. Run [`supabase_schema.sql`](./supabase_schema.sql) in SQL editor.
-3. Confirm `booking_inquiries` table exists and RLS policy allows anonymous inserts.
-4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` locally and in Netlify.
+3. Confirm `booking_inquiries`, `contact_inquiries`, `band_members`, `songs`, `song_member_statuses`, and `song_suggestion_votes` exist.
+4. Confirm RLS policies allow anonymous contact/booking inserts and authenticated approved band-member access to the internal songs board.
+5. Add approved band members to `band_members`, for example:
+
+```sql
+insert into public.band_members (display_name, instrument, email, phone, avatar_url, is_admin)
+values
+  ('Thomas', 'Guitar', 'tmacdonald7@gmail.com', '+19362831476', null, true),
+  ('Dean', 'Drums', null, '+19366489384', null, false),
+  ('Gunnar', 'Bass', null, '+17139335903', null, false),
+  ('Anthony', 'Frontman', null, '+12103632606', null, false);
+```
+
+6. In Supabase Auth, enable email OTP / magic links, phone auth, and configure your SMS provider if you want phone-based member login.
+7. If you want Google sign-in, configure Google OAuth in Supabase Auth and make sure the Google account email also exists in `band_members`.
+8. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` locally and in Netlify.
+9. Visit `/members/sign-in` to test member access, then sign in as an admin band member and use the import button on `/songs` to seed the current repertoire into the `songs` table.
 
 ## Blog Data Abstraction
 
@@ -77,6 +93,7 @@ Set environment variables in Netlify UI:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - (later) `STRAPI_URL`
 - (later) `STRAPI_TOKEN`
 

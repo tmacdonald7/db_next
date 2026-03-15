@@ -121,6 +121,9 @@ export default function RootLayout({
                     {item.label}
                   </SiteNavLink>
                 ))}
+                <Link href="/members/sign-in" className="members-nav-button">
+                  Members Sign In
+                </Link>
               </nav>
             </div>
           </header>
