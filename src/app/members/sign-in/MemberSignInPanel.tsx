@@ -205,6 +205,14 @@ export function MemberSignInPanel() {
             </button>
           </form>
 
+          {matchedMember ? (
+            <p className="status success">
+              Approved member: {matchedMember.displayName} | {matchedMember.instrument}
+            </p>
+          ) : null}
+          {statusMessage ? <p className="status success">{statusMessage}</p> : null}
+          {errorMessage ? <p className="status error">{errorMessage}</p> : null}
+
           <button
             type="button"
             className="button-secondary members-google-button"
@@ -226,14 +234,6 @@ export function MemberSignInPanel() {
           <li>Phone sign-in is intentionally off for now so you do not need an SMS provider.</li>
           <li>After sign-in, the internal songs board stays private and is set to `noindex`.</li>
         </ul>
-
-        {matchedMember ? (
-          <p className="status success">
-            Approved member: {matchedMember.displayName} | {matchedMember.instrument}
-          </p>
-        ) : null}
-        {statusMessage ? <p className="status success">{statusMessage}</p> : null}
-        {errorMessage ? <p className="status error">{errorMessage}</p> : null}
       </article>
     </section>
   );
