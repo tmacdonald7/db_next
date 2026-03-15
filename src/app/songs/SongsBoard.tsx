@@ -103,6 +103,15 @@ function getSongBucket(song: SongRecord): SongBucket {
   return "active";
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export function SongsBoard() {
   const [supabase, setSupabase] = useState<ReturnType<
     typeof createSupabaseBrowserClient
@@ -262,6 +271,171 @@ export function SongsBoard() {
     songs: activeSongs.slice(index * 10, index * 10 + 10),
   }));
   const additionalActiveSongs = activeSongs.slice(40);
+
+  function openPrintExport(title: string, bodyMarkup: string) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      setErrorMessage("Unable to open the PDF export window. Please allow pop-ups and try again.");
+      return;
+    }
+
+    const exportedAt = new Date().toLocaleString();
+    const documentTitle = escapeHtml(title);
+
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>${documentTitle}</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px;
+        color: #16181d;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background: #ffffff;
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+      }
+      .export-header {
+        margin-bottom: 28px;
+        padding-bottom: 18px;
+        border-bottom: 2px solid #d4a373;
+      }
+      .export-kicker {
+        margin: 0 0 8px;
+        color: #8f3d0a;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .export-meta {
+        margin: 10px 0 0;
+        color: #4f5963;
+        font-size: 13px;
+      }
+      .export-section {
+        margin-top: 22px;
+        break-inside: avoid;
+      }
+      .export-section h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        line-height: 1.1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      ol,
+      ul {
+        margin: 0;
+        padding-left: 24px;
+      }
+      li {
+        margin: 0 0 6px;
+        padding-left: 6px;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+      .artist {
+        color: #5a6570;
+      }
+      @media print {
+        body {
+          padding: 18px;
+        }
+      }
+    </style>
+    <script>
+      window.addEventListener("load", () => {
+        window.setTimeout(() => {
+          window.focus();
+          window.print();
+        }, 180);
+      });
+    </script>
+  </head>
+  <body>
+    <main>
+      <header class="export-header">
+        <p class="export-kicker">The Feedback Committee</p>
+        <h1>${documentTitle}</h1>
+        <p class="export-meta">Exported ${escapeHtml(exportedAt)}</p>
+      </header>
+      ${bodyMarkup}
+    </main>
+  </body>
+</html>`);
+    printWindow.document.close();
+  }
+
+  function exportActiveSetList() {
+    const sections = activeSets
+      .map((setGroup) => {
+        const items =
+          setGroup.songs.length > 0
+            ? setGroup.songs
+                .map(
+                  (song) =>
+                    `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span></li>`,
+                )
+                .join("")
+            : "<li>No songs in this set yet.</li>";
+
+        return `<section class="export-section"><h2>${escapeHtml(setGroup.label)}</h2><ol>${items}</ol></section>`;
+      })
+      .join("");
+
+    const overflow =
+      additionalActiveSongs.length > 0
+        ? `<section class="export-section"><h2>Additional Songs</h2><ol>${additionalActiveSongs
+            .map(
+              (song) =>
+                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span></li>`,
+            )
+            .join("")}</ol></section>`
+        : "";
+
+    openPrintExport("Active Set List", `${sections}${overflow}`);
+  }
+
+  function exportSuggestedSongs() {
+    const items =
+      suggestedSongs.length > 0
+        ? suggestedSongs
+            .map(
+              (song) =>
+                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span></li>`,
+            )
+            .join("")
+        : "<li>No suggested songs right now.</li>";
+
+    openPrintExport(
+      "Suggested Songs",
+      `<section class="export-section"><h2>Suggested Songs</h2><ul>${items}</ul></section>`,
+    );
+  }
 
   async function updateConfidence(songId: string, confidence: SongConfidence) {
     if (!currentMember || !supabase) {
@@ -841,8 +1015,11 @@ export function SongsBoard() {
       </div>
 
       <article className="panel section">
-        <div className="section-heading">
+        <div className="section-heading section-heading-with-actions">
           <h2>Active Set List</h2>
+          <button type="button" className="section-action" onClick={exportActiveSetList}>
+            Export PDF
+          </button>
         </div>
         {loading ? (
           <p className="songs-auth-copy">Loading the current working set...</p>
@@ -885,8 +1062,11 @@ export function SongsBoard() {
       </article>
 
       <article className="panel section">
-        <div className="section-heading">
+        <div className="section-heading section-heading-with-actions">
           <h2>Suggested Songs</h2>
+          <button type="button" className="section-action" onClick={exportSuggestedSongs}>
+            Export PDF
+          </button>
         </div>
         {suggestedSongs.length > 0 ? (
           <ul className="songs-board-list">{suggestedSongs.map((song) => renderSongRow(song))}</ul>

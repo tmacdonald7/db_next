@@ -235,5 +235,5 @@ values
   ('Thomas', 'Guitar', 'tmacdonald7@gmail.com', '+19362831476', null, true),
   ('Dean', 'Drums', null, '+19366489384', null, false),
   ('Gunnar', 'Bass', null, '+17139335903', null, false),
-  ('Anthony', 'Frontman', null, '+12103632606', null, false)
+  ('Anthony', 'Frontman', 'anthonyberdecio@gmail.com', '+12103632606', null, false)
 on conflict do nothing;
