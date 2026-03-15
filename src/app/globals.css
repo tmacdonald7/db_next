@@ -1154,10 +1154,6 @@ pre {
   gap: 0.85rem;
 }
 
-.songs-controls-panel {
-  margin-top: 1rem;
-}
-
 .songs-auth-copy {
   margin: 0;
   color: var(--foreground-muted);
@@ -1279,21 +1275,13 @@ pre {
   letter-spacing: 0.04em;
 }
 
-.songs-toolbar {
+.songs-controls-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(180px, 0.8fr);
   gap: 0.9rem;
+  margin-top: 1rem;
+  padding: 0.35rem 0 0;
 }
 
-.songs-toolbar-search,
-.songs-toolbar-filter {
-  display: grid;
-  gap: 0.38rem;
-  color: var(--secondary-soft);
-}
-
-.songs-toolbar-search input,
-.songs-toolbar-filter select,
 .songs-suggestion-form input,
 .members-auth-form input {
   border: 1px solid rgba(212, 163, 115, 0.18);
@@ -1320,7 +1308,7 @@ pre {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
   gap: 0.8rem;
-  margin-top: 0.9rem;
+  padding: 0.25rem 0 0.1rem;
 }
 
 .songs-board-list {
@@ -1764,7 +1752,6 @@ pre {
     font-size: 0.78rem;
   }
 
-  .songs-toolbar,
   .songs-suggestion-form,
   .song-board-row,
   .members-sign-in-grid {

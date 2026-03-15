@@ -46,7 +46,6 @@ type SongMemberStatus = {
   confidence: SongConfidence;
 };
 
-type FilterMode = "all" | "my_weak_spots" | "ready" | "learning";
 type SongBucket = "active" | "suggested" | "archived";
 type DropIndicator = {
   songId: string;
@@ -113,8 +112,6 @@ export function SongsBoard() {
   const [members, setMembers] = useState<BandMember[]>([]);
   const [songs, setSongs] = useState<SongRecord[]>([]);
   const [statuses, setStatuses] = useState<SongMemberStatus[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [suggestionTitle, setSuggestionTitle] = useState("");
   const [suggestionArtist, setSuggestionArtist] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -251,48 +248,13 @@ export function SongsBoard() {
     return map;
   }, [statuses]);
 
-  const filteredSongs = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return songs.filter((song) => {
-      const matchesQuery =
-        !query ||
-        song.title.toLowerCase().includes(query) ||
-        song.artist.toLowerCase().includes(query);
-
-      if (!matchesQuery) {
-        return false;
-      }
-
-      const confidenceMap = songStatusMap.get(song.id);
-      const knowCount = members.filter(
-        (member) => confidenceMap?.get(member.id) === "know_it",
-      ).length;
-      const currentConfidence = currentMember
-        ? confidenceMap?.get(currentMember.id) ?? "dont_know"
-        : "dont_know";
-
-      if (filterMode === "my_weak_spots") {
-        return currentConfidence !== "know_it";
-      }
-      if (filterMode === "ready") {
-        return members.length > 0 && knowCount === members.length;
-      }
-      if (filterMode === "learning") {
-        return knowCount < members.length;
-      }
-
-      return true;
-    });
-  }, [currentMember, filterMode, members, searchQuery, songStatusMap, songs]);
-
-  const activeSongs = filteredSongs
+  const activeSongs = songs
     .filter((song) => song.status === "active" || song.status === "selected")
     .sort((left, right) => left.sort_order - right.sort_order);
-  const suggestedSongs = filteredSongs
+  const suggestedSongs = songs
     .filter((song) => song.status === "suggested")
     .sort((left, right) => left.sort_order - right.sort_order);
-  const archivedSongs = filteredSongs
+  const archivedSongs = songs
     .filter((song) => song.status === "archived")
     .sort((left, right) => left.sort_order - right.sort_order);
   const activeSets = Array.from({ length: 4 }, (_value, index) => ({
@@ -819,70 +781,19 @@ export function SongsBoard() {
 
   return (
     <section className="section">
-      <article className="panel songs-auth-panel">
-        <div>
-          <div className="section-heading">
-            <h2>Band Repertoire Board</h2>
-          </div>
-          <p className="songs-auth-copy">
-            The active set list is grouped into four ten-song sets. Suggested songs
-            stay in their own reorderable queue until they are moved into the active
-            list.
-          </p>
-        </div>
-        <div className="song-board-actions">
-          {currentMember?.is_admin && songs.length === 0 ? (
-            <button
-              type="button"
-              className="button-secondary"
-              disabled={busyKey === "import:default"}
-              onClick={() => void importDefaultSongs()}
-            >
-              {busyKey === "import:default" ? "Importing..." : "Import Current Set"}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="button-secondary"
-            onClick={() => {
-              if (supabase) {
-                void supabase.auth.signOut();
-              }
-              setStatusMessage("Signed out.");
-            }}
-          >
-            Sign Out
-          </button>
-        </div>
-      </article>
-
-      <div className="panel songs-controls-panel">
-        <div className="songs-toolbar">
-          <label className="songs-toolbar-search">
-            Search songs
-            <input
-              type="search"
-              placeholder="Search title or artist"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </label>
-          <label className="songs-toolbar-filter">
-            Filter
-            <select
-              value={filterMode}
-              onChange={(event) => setFilterMode(event.target.value as FilterMode)}
-            >
-              <option value="all">All songs</option>
-              <option value="my_weak_spots">My weak spots</option>
-              <option value="ready">Everyone knows it</option>
-              <option value="learning">Still learning</option>
-            </select>
-          </label>
-        </div>
-
+      <div className="songs-controls-panel">
         {currentMember?.is_admin ? (
           <div className="song-board-actions">
+            {songs.length === 0 ? (
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={busyKey === "import:default"}
+                onClick={() => void importDefaultSongs()}
+              >
+                {busyKey === "import:default" ? "Importing..." : "Import Current Set"}
+              </button>
+            ) : null}
             <button
               type="button"
               className="songs-archived-toggle"
