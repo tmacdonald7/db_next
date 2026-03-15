@@ -3,13 +3,11 @@ import { Bebas_Neue, Montserrat, Oswald } from "next/font/google";
 import Link from "next/link";
 import {
   bandName,
-  brandTagline,
   socialLinks,
 } from "@/lib/brand";
 import { themeTokens } from "@/app/style-guide/page";
 import { FooterMemberLinks } from "@/components/FooterMemberLinks";
-import { MemberNavStatus } from "@/components/MemberNavStatus";
-import { SiteNavLink } from "@/components/SiteNavLink";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 const oswald = Oswald({
@@ -46,15 +44,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const footerNavigationItems = [
-    { href: "/", label: "Home" },
-    { href: "/media", label: "Media" },
-    { href: "/shows", label: "Shows" },
-    { href: "/contact", label: "Contact" },
-    { href: "/epk", label: "EPK" },
-    { href: "/blog", label: "Blog" },
-  ];
-
   const socialIcons = {
     facebook: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -73,7 +62,7 @@ export default function RootLayout({
     ),
   } as const;
 
-  const navigationItems = [
+  const footerNavigationItems = [
     { href: "/", label: "Home" },
     { href: "/media", label: "Media" },
     { href: "/shows", label: "Shows" },
@@ -137,42 +126,7 @@ export default function RootLayout({
         <style dangerouslySetInnerHTML={{ __html: rootCss }} />
         <div className="site-shell">
           <div className="site-atmosphere" aria-hidden="true" />
-          <header className="site-header">
-            <div className="site-utility-bar">
-              <div className="container utility-wrap">
-                <div className="utility-actions">
-                  <div className="utility-socials" aria-label="Social links">
-                    {socialLinks.map((item) => (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        className="utility-social-link"
-                        aria-label={item.label}
-                      >
-                        {socialIcons[item.icon]}
-                      </Link>
-                    ))}
-                  </div>
-                  <MemberNavStatus />
-                </div>
-              </div>
-            </div>
-            <div className="container nav-wrap">
-              <div className="brand-lockup">
-                <Link href="/" className="brand-link">
-                  {bandName}
-                </Link>
-                <p className="brand-tagline">{brandTagline}</p>
-              </div>
-              <nav className="site-nav" aria-label="Main navigation">
-                {navigationItems.map((item) => (
-                  <SiteNavLink key={item.href} href={item.href}>
-                    {item.label}
-                  </SiteNavLink>
-                ))}
-              </nav>
-            </div>
-          </header>
+          <SiteHeader />
           <main>{children}</main>
           <footer className="site-footer">
             <div className="container footer-wrap">
