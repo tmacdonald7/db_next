@@ -3,7 +3,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeEmail, normalizePhoneNumber } from "@/lib/member-auth";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
+import {
+  createSupabaseBrowserClient,
+  hasSupabasePublicConfig,
+} from "@/lib/supabase";
 
 type LookupMember = {
   displayName: string;
@@ -22,6 +25,7 @@ export function MemberSignInPanel() {
   const [supabase, setSupabase] = useState<ReturnType<
     typeof createSupabaseBrowserClient
   > | null>(null);
+  const [hasPublicConfig, setHasPublicConfig] = useState(true);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -32,6 +36,7 @@ export function MemberSignInPanel() {
   const [busyAction, setBusyAction] = useState<"phone" | "verify" | "email" | "google" | null>(null);
 
   useEffect(() => {
+    setHasPublicConfig(hasSupabasePublicConfig());
     setSupabase(createSupabaseBrowserClient());
   }, []);
 
@@ -223,6 +228,27 @@ export function MemberSignInPanel() {
       setStatusMessage(null);
       setBusyAction(null);
     }
+  }
+
+  if (!hasPublicConfig) {
+    return (
+      <section className="section">
+        <article className="panel members-auth-notes">
+          <div className="section-heading">
+            <h2>Member Auth Needs Setup</h2>
+          </div>
+          <p className="members-auth-copy">
+            This deploy is missing the public Supabase environment variables, so the
+            sign-in tools cannot load yet.
+          </p>
+          <ul className="song-list members-notes-list">
+            <li>Add `NEXT_PUBLIC_SUPABASE_URL` in Netlify.</li>
+            <li>Add `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Netlify.</li>
+            <li>Redeploy the site after saving those values.</li>
+          </ul>
+        </article>
+      </section>
+    );
   }
 
   return (

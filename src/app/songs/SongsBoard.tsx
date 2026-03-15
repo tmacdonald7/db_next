@@ -2,7 +2,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
+import {
+  createSupabaseBrowserClient,
+  hasSupabasePublicConfig,
+} from "@/lib/supabase";
 import {
   defaultSongCatalog,
   getSongSlug,
@@ -78,6 +81,7 @@ export function SongsBoard() {
   const [supabase, setSupabase] = useState<ReturnType<
     typeof createSupabaseBrowserClient
   > | null>(null);
+  const [hasPublicConfig, setHasPublicConfig] = useState(true);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [members, setMembers] = useState<BandMember[]>([]);
   const [songs, setSongs] = useState<SongRecord[]>([]);
@@ -94,6 +98,7 @@ export function SongsBoard() {
   const [dragSongId, setDragSongId] = useState<string | null>(null);
 
   useEffect(() => {
+    setHasPublicConfig(hasSupabasePublicConfig());
     setSupabase(createSupabaseBrowserClient());
   }, []);
 
@@ -718,6 +723,27 @@ export function SongsBoard() {
           </div>
         </div>
       </li>
+    );
+  }
+
+  if (!hasPublicConfig) {
+    return (
+      <section className="section">
+        <article className="panel songs-auth-panel">
+          <div>
+            <div className="section-heading">
+              <h2>Member Access Needs Setup</h2>
+            </div>
+            <p className="songs-auth-copy">
+              The site is missing the public Supabase environment variables needed to
+              load the private songs board.
+            </p>
+          </div>
+          <Link href="/members/sign-in" className="button-secondary">
+            View Sign-In Setup
+          </Link>
+        </article>
+      </section>
     );
   }
 
