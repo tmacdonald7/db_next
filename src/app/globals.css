@@ -1383,6 +1383,17 @@ pre {
   cursor: grab;
 }
 
+.song-board-row.is-drag-source {
+  opacity: 0.52;
+  background: rgba(29, 36, 48, 0.34);
+}
+
+.song-board-row.is-drag-source .song-board-main,
+.song-board-row.is-drag-source .song-board-avatars,
+.song-board-row.is-drag-source .song-board-controls {
+  pointer-events: none;
+}
+
 .song-board-row.is-drop-target-before::before,
 .song-board-row.is-drop-target-after::after {
   content: "";

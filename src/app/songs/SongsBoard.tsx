@@ -525,6 +525,7 @@ export function SongsBoard() {
     const isDraggable =
       Boolean(currentMember?.is_admin) &&
       (songBucket === "active" || songBucket === "suggested");
+    const isDragSource = dragSongId === song.id && dragBucket === songBucket;
     const rowDropPosition =
       dropIndicator?.songId === song.id && dropIndicator.bucket === songBucket
         ? dropIndicator.position
@@ -533,9 +534,10 @@ export function SongsBoard() {
     return (
       <li
         key={song.id}
-        className={`song-board-row${isDraggable ? " is-draggable" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
+        className={`song-board-row${isDraggable ? " is-draggable" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
         draggable={isDraggable}
-        onDragStart={() => {
+        onDragStart={(event) => {
+          event.dataTransfer.effectAllowed = "move";
           setDragSongId(song.id);
           setDragBucket(songBucket);
           setDropIndicator(null);
@@ -552,11 +554,17 @@ export function SongsBoard() {
             const position =
               event.clientY - bounds.top < bounds.height / 2 ? "before" : "after";
 
-            setDropIndicator({
-              songId: song.id,
-              bucket: songBucket,
-              position,
-            });
+            setDropIndicator((current) =>
+              current?.songId === song.id &&
+              current.bucket === songBucket &&
+              current.position === position
+                ? current
+                : {
+                    songId: song.id,
+                    bucket: songBucket,
+                    position,
+                  },
+            );
           }
         }}
         onDragLeave={(event) => {
