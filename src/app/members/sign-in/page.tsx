@@ -16,8 +16,8 @@ export default function MembersSignInPage() {
       <section className="page-header members-sign-in-header">
         <h1>Members Sign In</h1>
         <p>
-          Sign in with your phone, email magic link, or Google account to access
-          the internal song board and update your confidence on the current set.
+          Sign in with your email magic link or Google account to access the
+          internal song board and update your confidence on the current set.
         </p>
       </section>
 

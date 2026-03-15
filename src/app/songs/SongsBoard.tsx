@@ -756,8 +756,8 @@ export function SongsBoard() {
               <h2>Band Access Required</h2>
             </div>
             <p className="songs-auth-copy">
-              This board is private to band members. Sign in with your phone, email,
-              or Google account to see the working set and update your readiness.
+              This board is private to band members. Sign in with your email or
+              Google account to see the working set and update your readiness.
             </p>
           </div>
           <Link href="/members/sign-in" className="button-primary">
@@ -778,7 +778,7 @@ export function SongsBoard() {
             </div>
             <p className="songs-auth-copy">
               You are signed in, but this account is not matched to an approved band
-              member record yet. Add the member email or phone in Supabase to finish access.
+              member record yet. Add the member email in Supabase to finish access.
             </p>
           </div>
           <Link href="/members/sign-in" className="button-secondary">
