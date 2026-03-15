@@ -10,7 +10,6 @@ import {
   defaultSongCatalog,
   getSongSlug,
   songConfidenceLabels,
-  songConfidenceOpacity,
   type SongConfidence,
   type SongStage,
 } from "@/lib/songs";
@@ -47,11 +46,6 @@ type SongMemberStatus = {
   confidence: SongConfidence;
 };
 
-type SongVote = {
-  song_id: string;
-  member_id: string;
-};
-
 type FilterMode = "all" | "my_weak_spots" | "ready" | "learning";
 
 function matchesCurrentMember(member: BandMember, user: SessionUser | null) {
@@ -86,7 +80,6 @@ export function SongsBoard() {
   const [members, setMembers] = useState<BandMember[]>([]);
   const [songs, setSongs] = useState<SongRecord[]>([]);
   const [statuses, setStatuses] = useState<SongMemberStatus[]>([]);
-  const [votes, setVotes] = useState<SongVote[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [suggestionTitle, setSuggestionTitle] = useState("");
@@ -96,6 +89,7 @@ export function SongsBoard() {
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [dragSongId, setDragSongId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     setHasPublicConfig(hasSupabasePublicConfig());
@@ -155,7 +149,7 @@ export function SongsBoard() {
     setErrorMessage(null);
 
     try {
-      const [membersResult, songsResult, statusesResult, votesResult] =
+      const [membersResult, songsResult, statusesResult] =
         await Promise.all([
           client
             .from("band_members")
@@ -164,12 +158,10 @@ export function SongsBoard() {
           client
             .from("songs")
             .select("id, slug, title, artist, status, sort_order, suggested_by_member_id, notes")
-            .neq("status", "archived")
             .order("status", { ascending: true })
             .order("sort_order", { ascending: true })
             .order("title", { ascending: true }),
           client.from("song_member_statuses").select("song_id, member_id, confidence"),
-          client.from("song_suggestion_votes").select("song_id, member_id"),
         ]);
 
       if (membersResult.error) {
@@ -181,14 +173,9 @@ export function SongsBoard() {
       if (statusesResult.error) {
         throw statusesResult.error;
       }
-      if (votesResult.error) {
-        throw votesResult.error;
-      }
-
       setMembers(membersResult.data ?? []);
       setSongs(songsResult.data ?? []);
       setStatuses(statusesResult.data ?? []);
-      setVotes(votesResult.data ?? []);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -205,7 +192,6 @@ export function SongsBoard() {
       setMembers([]);
       setSongs([]);
       setStatuses([]);
-      setVotes([]);
       setLoading(false);
       return;
     }
@@ -233,18 +219,6 @@ export function SongsBoard() {
 
     return map;
   }, [statuses]);
-
-  const songVoteMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-
-    for (const vote of votes) {
-      const songSet = map.get(vote.song_id) ?? new Set<string>();
-      songSet.add(vote.member_id);
-      map.set(vote.song_id, songSet);
-    }
-
-    return map;
-  }, [votes]);
 
   const filteredSongs = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -281,11 +255,11 @@ export function SongsBoard() {
     });
   }, [currentMember, filterMode, members, searchQuery, songStatusMap, songs]);
 
-  const activeSongs = filteredSongs.filter((song) => song.status === "active");
-  const selectedSongs = filteredSongs
-    .filter((song) => song.status === "selected")
+  const activeSongs = filteredSongs
+    .filter((song) => song.status === "active" || song.status === "selected")
     .sort((left, right) => left.sort_order - right.sort_order);
   const suggestedSongs = filteredSongs.filter((song) => song.status === "suggested");
+  const archivedSongs = filteredSongs.filter((song) => song.status === "archived");
 
   async function updateConfidence(songId: string, confidence: SongConfidence) {
     if (!currentMember) {
@@ -388,62 +362,6 @@ export function SongsBoard() {
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to add the suggestion.",
       );
-    } finally {
-      setBusyKey(null);
-    }
-  }
-
-  async function toggleSuggestionVote(songId: string) {
-    if (!currentMember) {
-      return;
-    }
-    if (!supabase) {
-      return;
-    }
-
-    const hasVote = songVoteMap.get(songId)?.has(currentMember.id) ?? false;
-    const client = supabase;
-    setBusyKey(`vote:${songId}`);
-    setErrorMessage(null);
-    setStatusMessage(null);
-
-    try {
-      if (hasVote) {
-        const { error } = await client
-          .from("song_suggestion_votes")
-          .delete()
-          .eq("song_id", songId)
-          .eq("member_id", currentMember.id);
-
-        if (error) {
-          throw error;
-        }
-
-        setVotes((current) =>
-          current.filter(
-            (vote) =>
-              !(vote.song_id === songId && vote.member_id === currentMember.id),
-          ),
-        );
-      } else {
-        const { error } = await client.from("song_suggestion_votes").insert({
-          song_id: songId,
-          member_id: currentMember.id,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        setVotes((current) => [
-          ...current,
-          { song_id: songId, member_id: currentMember.id },
-        ]);
-      }
-
-      setStatusMessage(hasVote ? "Vote removed." : "Vote added.");
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to update vote.");
     } finally {
       setBusyKey(null);
     }
@@ -575,22 +493,11 @@ export function SongsBoard() {
     }
   }
 
-  function renderSongRow(song: SongRecord) {
+  function renderSongRow(song: SongRecord, index?: number) {
     const confidenceMap = songStatusMap.get(song.id) ?? new Map<string, SongConfidence>();
-    const knowCount = members.filter(
-      (member) => confidenceMap.get(member.id) === "know_it",
-    ).length;
     const currentConfidence = currentMember
       ? confidenceMap.get(currentMember.id) ?? "dont_know"
       : "dont_know";
-    const voteCount = songVoteMap.get(song.id)?.size ?? 0;
-    const currentMemberVoted = currentMember
-      ? songVoteMap.get(song.id)?.has(currentMember.id) ?? false
-      : false;
-    const suggestedBy = song.suggested_by_member_id
-      ? members.find((member) => member.id === song.suggested_by_member_id)
-      : null;
-
     return (
       <li
         key={song.id}
@@ -609,16 +516,20 @@ export function SongsBoard() {
         }}
       >
         <div className="song-board-main">
+          {typeof index === "number" ? (
+            <span className="song-row-number" aria-hidden="true">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+          ) : null}
           {currentMember?.is_admin && song.status === "selected" ? (
             <span className="song-drag-handle" aria-hidden="true">
               ≡
             </span>
           ) : null}
           <div className="song-board-copy">
-            <p className="song-board-title">{song.title}</p>
-            <p className="song-board-artist">
-              {song.artist}
-              {suggestedBy ? ` • suggested by ${suggestedBy.display_name}` : ""}
+            <p className="song-board-title">
+              <span>{song.title}</span>
+              <span className="song-board-artist">{song.artist}</span>
             </p>
           </div>
         </div>
@@ -630,9 +541,8 @@ export function SongsBoard() {
             return (
               <div
                 key={member.id}
-                className={`song-avatar${currentMember?.id === member.id ? " is-current" : ""}`}
+                className={`song-avatar song-avatar-${confidence}${currentMember?.id === member.id ? " is-current" : ""}`}
                 title={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
-                style={{ opacity: songConfidenceOpacity[confidence] }}
               >
                 {member.avatar_url ? (
                   <img src={member.avatar_url} alt={member.display_name} />
@@ -642,15 +552,6 @@ export function SongsBoard() {
               </div>
             );
           })}
-        </div>
-
-        <div className="song-board-meta">
-          <span className="song-board-ready">
-            {knowCount}/{members.length || 0} ready
-          </span>
-          {song.status === "suggested" ? (
-            <span className="song-board-votes">{voteCount} set votes</span>
-          ) : null}
         </div>
 
         <div className="song-board-controls">
@@ -664,7 +565,7 @@ export function SongsBoard() {
                     className={currentConfidence === confidence ? "is-active" : undefined}
                     disabled={
                       busyKey === `confidence:${song.id}:${confidence}` ||
-                      song.status === "suggested"
+                      song.status === "archived"
                     }
                     onClick={() => void updateConfidence(song.id, confidence)}
                   >
@@ -680,34 +581,24 @@ export function SongsBoard() {
           ) : null}
 
           <div className="song-board-actions">
-            {song.status === "suggested" && currentMember ? (
-              <button
-                type="button"
-                className={`vote-chip${currentMemberVoted ? " is-active" : ""}`}
-                disabled={busyKey === `vote:${song.id}`}
-                onClick={() => void toggleSuggestionVote(song.id)}
-              >
-                {currentMemberVoted ? "Voted In" : "Vote In"}
-              </button>
-            ) : null}
             {currentMember?.is_admin && song.status === "suggested" ? (
-              <button
-                type="button"
-                className="vote-chip"
-                disabled={busyKey === `stage:${song.id}:selected`}
-                onClick={() => void updateSongStage(song.id, "selected")}
-              >
-                Promote
-              </button>
-            ) : null}
-            {currentMember?.is_admin && song.status === "selected" ? (
               <button
                 type="button"
                 className="vote-chip"
                 disabled={busyKey === `stage:${song.id}:active`}
                 onClick={() => void updateSongStage(song.id, "active")}
               >
-                Move To Active
+                Add To Active
+              </button>
+            ) : null}
+            {currentMember?.is_admin && song.status === "archived" ? (
+              <button
+                type="button"
+                className="vote-chip"
+                disabled={busyKey === `stage:${song.id}:active`}
+                onClick={() => void updateSongStage(song.id, "active")}
+              >
+                Restore To Active
               </button>
             ) : null}
             {currentMember?.is_admin && song.status !== "archived" ? (
@@ -827,7 +718,7 @@ export function SongsBoard() {
         </div>
       </article>
 
-      <div className="panel">
+      <div className="panel songs-controls-panel">
         <div className="songs-toolbar">
           <label className="songs-toolbar-search">
             Search songs
@@ -851,6 +742,20 @@ export function SongsBoard() {
             </select>
           </label>
         </div>
+
+        {currentMember?.is_admin ? (
+          <div className="song-board-actions">
+            <button
+              type="button"
+              className="songs-archived-toggle"
+              onClick={() => setShowArchived((current) => !current)}
+            >
+              {showArchived
+                ? "Hide Archived Songs"
+                : `Show Archived Songs (${archivedSongs.length})`}
+            </button>
+          </div>
+        ) : null}
 
         <form className="songs-suggestion-form" onSubmit={handleSuggestionSubmit}>
           <input
@@ -885,20 +790,11 @@ export function SongsBoard() {
         {loading ? (
           <p className="songs-auth-copy">Loading the current working set...</p>
         ) : activeSongs.length > 0 ? (
-          <ul className="songs-board-list">{activeSongs.map(renderSongRow)}</ul>
+          <ol className="songs-board-list songs-board-list-numbered">
+            {activeSongs.map((song, index) => renderSongRow(song, index))}
+          </ol>
         ) : (
           <p className="songs-auth-copy">No active songs match this view yet.</p>
-        )}
-      </article>
-
-      <article className="panel section">
-        <div className="section-heading">
-          <h2>Selected Next</h2>
-        </div>
-        {selectedSongs.length > 0 ? (
-          <ul className="songs-board-list">{selectedSongs.map(renderSongRow)}</ul>
-        ) : (
-          <p className="songs-auth-copy">No selected songs are waiting in the queue right now.</p>
         )}
       </article>
 
@@ -912,6 +808,19 @@ export function SongsBoard() {
           <p className="songs-auth-copy">No suggestions yet. Add one above to get the queue started.</p>
         )}
       </article>
+
+      {currentMember?.is_admin && showArchived ? (
+        <article className="panel section">
+          <div className="section-heading">
+            <h2>Archived Songs</h2>
+          </div>
+          {archivedSongs.length > 0 ? (
+            <ul className="songs-board-list">{archivedSongs.map(renderSongRow)}</ul>
+          ) : (
+            <p className="songs-auth-copy">No archived songs right now.</p>
+          )}
+        </article>
+      ) : null}
     </section>
   );
 }

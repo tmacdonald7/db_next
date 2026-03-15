@@ -5,9 +5,9 @@ import {
   bandName,
   brandTagline,
   socialLinks,
-  utilityLinks,
 } from "@/lib/brand";
 import { themeTokens } from "@/app/style-guide/page";
+import { FooterMemberLinks } from "@/components/FooterMemberLinks";
 import { MemberNavStatus } from "@/components/MemberNavStatus";
 import { SiteNavLink } from "@/components/SiteNavLink";
 import "./globals.css";
@@ -46,6 +46,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const footerNavigationItems = [
+    { href: "/", label: "Home" },
+    { href: "/media", label: "Media" },
+    { href: "/shows", label: "Shows" },
+    { href: "/contact", label: "Contact" },
+    { href: "/epk", label: "EPK" },
+    { href: "/blog", label: "Blog" },
+  ];
+
   const socialIcons = {
     facebook: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -67,13 +76,10 @@ export default function RootLayout({
   const navigationItems = [
     { href: "/", label: "Home" },
     { href: "/media", label: "Media" },
-    { href: "/songs", label: "Song List" },
     { href: "/shows", label: "Shows" },
     { href: "/contact", label: "Contact" },
-    { href: "/book", label: "Booking" },
     { href: "/epk", label: "EPK" },
     { href: "/blog", label: "Blog" },
-    { href: "/style-guide", label: "Style Guide" },
   ];
 
   const rootCss = `:root {
@@ -134,26 +140,19 @@ export default function RootLayout({
           <header className="site-header">
             <div className="site-utility-bar">
               <div className="container utility-wrap">
-                <div className="utility-cta-group">
-                  {utilityLinks.map((item) => (
-                    <Link key={item.href} href={item.href} className="utility-cta-link">
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
                 <div className="utility-actions">
                   <div className="utility-socials" aria-label="Social links">
                     {socialLinks.map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="utility-social-link"
-                      aria-label={item.label}
-                    >
-                      {socialIcons[item.icon]}
-                    </Link>
-                  ))}
-                </div>
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        className="utility-social-link"
+                        aria-label={item.label}
+                      >
+                        {socialIcons[item.icon]}
+                      </Link>
+                    ))}
+                  </div>
                   <MemberNavStatus />
                 </div>
               </div>
@@ -177,8 +176,53 @@ export default function RootLayout({
           <main>{children}</main>
           <footer className="site-footer">
             <div className="container footer-wrap">
-              <p>{bandName}</p>
-              <p>Serving Montgomery, Conroe, and Houston event venues.</p>
+              <div className="footer-brand-panel">
+                <div className="footer-brand-group">
+                  <p className="footer-kicker">The Feedback Committee</p>
+                  <h2 className="footer-brand-heading">{bandName}</h2>
+                  <p className="footer-brand-copy">
+                    Classic rock with a polished stage presence for private
+                    events, patios, venue nights, and upscale live-room sets.
+                  </p>
+                </div>
+                <div className="footer-socials" aria-label="Footer social links">
+                  {socialLinks.map((item) => (
+                    <Link
+                      key={`footer-${item.label}`}
+                      href={item.href}
+                      className="footer-social-link"
+                      aria-label={item.label}
+                    >
+                      {socialIcons[item.icon]}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <div className="footer-links-column">
+                <p className="footer-heading">Explore</p>
+                <div className="footer-links-list">
+                  {footerNavigationItems.map((item) => (
+                    <Link key={`footer-nav-${item.href}`} href={item.href}>
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <div className="footer-links-column">
+                <p className="footer-heading">Booking</p>
+                <div className="footer-links-list">
+                  <Link href="/contact">Contact The Band</Link>
+                  <Link href="/epk">View EPK</Link>
+                  <Link href="/shows">Upcoming Shows</Link>
+                </div>
+              </div>
+              <div className="footer-links-column footer-meta-column">
+                <p className="footer-heading">Service Area</p>
+                <p className="footer-meta-copy">
+                  Serving the Greater Houston Area event venues.
+                </p>
+                <FooterMemberLinks />
+              </div>
             </div>
           </footer>
         </div>

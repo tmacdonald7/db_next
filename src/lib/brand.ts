@@ -8,11 +8,6 @@ export const ctaLabels = {
 
 export const serviceArea = ["Montgomery", "Conroe", "Houston"] as const;
 
-export const utilityLinks = [
-  { href: "/book", label: "Book Us For Your Event" },
-  { href: "/contact", label: "Contact Us" },
-] as const;
-
 export const socialLinks = [
   {
     href: "#",
