@@ -63,6 +63,7 @@ create table if not exists public.band_members (
   phone text unique,
   avatar_url text,
   is_admin boolean not null default false,
+  can_vote boolean not null default true,
   constraint band_members_contact_required check (email is not null or phone is not null)
 );
 
@@ -99,6 +100,21 @@ as $$
     from public.band_members member
     where member.id = public.current_band_member_id()
       and member.is_admin = true
+  );
+$$;
+
+create or replace function public.current_band_member_can_vote()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.band_members member
+    where member.id = public.current_band_member_id()
+      and member.can_vote = true
   );
 $$;
 
@@ -215,6 +231,7 @@ create policy "Allow members to vote on suggestions"
   to authenticated
   with check (
     member_id = public.current_band_member_id()
+    and public.current_band_member_can_vote()
     and exists (
       select 1
       from public.songs suggested_song
@@ -228,12 +245,16 @@ create policy "Allow members to remove their suggestion votes"
   on public.song_suggestion_votes
   for delete
   to authenticated
-  using (member_id = public.current_band_member_id());
+  using (
+    member_id = public.current_band_member_id()
+    and public.current_band_member_can_vote()
+  );
 
-insert into public.band_members (display_name, instrument, email, phone, avatar_url, is_admin)
+insert into public.band_members (display_name, instrument, email, phone, avatar_url, is_admin, can_vote)
 values
-  ('Thomas', 'Guitar', 'tmacdonald7@gmail.com', '+19362831476', null, true),
-  ('Dean', 'Drums', null, '+19366489384', null, false),
-  ('Gunnar', 'Bass', null, '+17139335903', null, false),
-  ('Anthony', 'Frontman', 'anthonyberdecio@gmail.com', '+12103632606', null, false)
+  ('Thomas', 'Guitar', 'tmacdonald7@gmail.com', '+19362831476', null, true, true),
+  ('Dean', 'Drums', 'dbouch9077@yahoo.com', '+19366489384', null, false, true),
+  ('Gunnar', 'Bass', null, '+17139335903', null, false, true),
+  ('Anthony', 'Frontman', 'anthonyberdecio@gmail.com', '+12103632606', null, false, true),
+  ('Stephen', 'Support', 'sgmacdonald1987@gmail.com', null, null, false, false)
 on conflict do nothing;

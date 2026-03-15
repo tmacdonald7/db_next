@@ -1599,7 +1599,7 @@ pre {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  justify-items: end;
+  justify-content: flex-end;
   min-width: 0;
 }
 
@@ -1654,6 +1654,57 @@ pre {
   background: rgba(18, 22, 29, 0.9);
 }
 
+.archive-action {
+  border: none;
+  background: transparent;
+  color: var(--foreground-muted);
+  padding: 0.1rem 0.2rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.archive-action:hover {
+  color: var(--foreground);
+  text-shadow: 0 0 10px rgba(200, 90, 17, 0.08);
+}
+
+.vote-chip-vote {
+  border-color: rgba(212, 163, 115, 0.28);
+  color: var(--secondary-soft);
+  min-width: 3.8rem;
+  justify-content: center;
+}
+
+.vote-chip-vote.is-active {
+  box-shadow: 0 0 18px rgba(200, 90, 17, 0.12);
+  color: #9dd487;
+  border-color: rgba(118, 185, 92, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(54, 122, 66, 0.28) 0%,
+    rgba(29, 36, 48, 0.96) 100%
+  );
+}
+
+.vote-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+}
+
+.vote-chip-icon svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.vote-chip-icon span {
+  min-width: 1ch;
+  text-align: center;
+}
+
 .songs-archived-toggle {
   justify-self: start;
   border: none;
@@ -1670,6 +1721,30 @@ pre {
 .songs-archived-toggle:hover {
   color: var(--foreground);
   text-shadow: 0 0 14px rgba(200, 90, 17, 0.12);
+}
+
+.songs-archived-toggle-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.active-set-dropzone {
+  border: 1px dashed rgba(212, 163, 115, 0.24);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(18, 22, 29, 0.32);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.active-set-dropzone.is-active {
+  border-color: rgba(212, 163, 115, 0.44);
+  background: rgba(29, 36, 48, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(212, 163, 115, 0.08);
 }
 
 .members-sign-in-header {

@@ -27,9 +27,9 @@ export const defaultSongCatalog = songCategories
 export const validSongSlugs = new Set(defaultSongCatalog.map((song) => song.slug));
 
 export const songConfidenceLabels: Record<SongConfidence, string> = {
-  dont_know: "I don't know it",
-  kind_of_know: "I kind of know it",
-  know_it: "I know it",
+  dont_know: "Not ready",
+  kind_of_know: "Almost ready",
+  know_it: "Ready",
 };
 
 export const songConfidenceOpacity: Record<SongConfidence, number> = {

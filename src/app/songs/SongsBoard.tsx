@@ -27,6 +27,7 @@ type BandMember = {
   phone: string | null;
   avatar_url: string | null;
   is_admin: boolean;
+  can_vote: boolean;
 };
 
 type SongRecord = {
@@ -44,6 +45,11 @@ type SongMemberStatus = {
   song_id: string;
   member_id: string;
   confidence: SongConfidence;
+};
+
+type SongSuggestionVote = {
+  song_id: string;
+  member_id: string;
 };
 
 type SongBucket = "active" | "suggested" | "archived";
@@ -112,6 +118,43 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+type SongNotesMetadata = {
+  setNumber?: number;
+};
+
+function parseSongNotesMetadata(notes: string | null): SongNotesMetadata {
+  if (!notes) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(notes) as SongNotesMetadata;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function getSongSetNumber(song: SongRecord) {
+  const parsed = parseSongNotesMetadata(song.notes);
+  const setNumber = parsed.setNumber;
+
+  if (typeof setNumber === "number" && Number.isFinite(setNumber)) {
+    return Math.min(4, Math.max(1, Math.round(setNumber)));
+  }
+
+  return Math.min(4, Math.max(1, Math.floor(song.sort_order / 10) + 1));
+}
+
+function withSongSetNumber(song: SongRecord, setNumber: number) {
+  const nextNotes = {
+    ...parseSongNotesMetadata(song.notes),
+    setNumber: Math.min(4, Math.max(1, Math.round(setNumber))),
+  };
+
+  return JSON.stringify(nextNotes);
+}
+
 export function SongsBoard() {
   const [supabase, setSupabase] = useState<ReturnType<
     typeof createSupabaseBrowserClient
@@ -121,6 +164,7 @@ export function SongsBoard() {
   const [members, setMembers] = useState<BandMember[]>([]);
   const [songs, setSongs] = useState<SongRecord[]>([]);
   const [statuses, setStatuses] = useState<SongMemberStatus[]>([]);
+  const [suggestionVotes, setSuggestionVotes] = useState<SongSuggestionVote[]>([]);
   const [suggestionTitle, setSuggestionTitle] = useState("");
   const [suggestionArtist, setSuggestionArtist] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -190,10 +234,10 @@ export function SongsBoard() {
     setErrorMessage(null);
 
     try {
-      const [membersResult, songsResult, statusesResult] = await Promise.all([
+      const [membersResult, songsResult, statusesResult, votesResult] = await Promise.all([
         client
           .from("band_members")
-          .select("id, display_name, instrument, email, phone, avatar_url, is_admin")
+          .select("id, display_name, instrument, email, phone, avatar_url, is_admin, can_vote")
           .order("created_at", { ascending: true }),
         client
           .from("songs")
@@ -202,6 +246,7 @@ export function SongsBoard() {
           .order("sort_order", { ascending: true })
           .order("title", { ascending: true }),
         client.from("song_member_statuses").select("song_id, member_id, confidence"),
+        client.from("song_suggestion_votes").select("song_id, member_id"),
       ]);
 
       if (membersResult.error) {
@@ -213,10 +258,14 @@ export function SongsBoard() {
       if (statusesResult.error) {
         throw statusesResult.error;
       }
+      if (votesResult.error) {
+        throw votesResult.error;
+      }
 
       setMembers(membersResult.data ?? []);
       setSongs(songsResult.data ?? []);
       setStatuses(statusesResult.data ?? []);
+      setSuggestionVotes(votesResult.data ?? []);
     } catch (error) {
       setErrorMessage(getErrorMessage(error, "Unable to load the songs board right now."));
     } finally {
@@ -229,6 +278,7 @@ export function SongsBoard() {
       setMembers([]);
       setSongs([]);
       setStatuses([]);
+      setSuggestionVotes([]);
       setLoading(false);
       return;
     }
@@ -244,6 +294,8 @@ export function SongsBoard() {
     () => members.find((member) => matchesCurrentMember(member, sessionUser)) ?? null,
     [members, sessionUser],
   );
+  const votingMembers = useMemo(() => members.filter((member) => member.can_vote), [members]);
+  const votingMemberCount = votingMembers.length;
 
   const songStatusMap = useMemo(() => {
     const map = new Map<string, Map<string, SongConfidence>>();
@@ -257,20 +309,52 @@ export function SongsBoard() {
     return map;
   }, [statuses]);
 
+  const suggestionVoteCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+
+    for (const vote of suggestionVotes) {
+      map.set(vote.song_id, (map.get(vote.song_id) ?? 0) + 1);
+    }
+
+    return map;
+  }, [suggestionVotes]);
+
+  const currentMemberVoteSet = useMemo(() => {
+    if (!currentMember) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      suggestionVotes
+        .filter((vote) => vote.member_id === currentMember.id)
+        .map((vote) => vote.song_id),
+    );
+  }, [currentMember, suggestionVotes]);
+
   const activeSongs = songs
     .filter((song) => song.status === "active" || song.status === "selected")
-    .sort((left, right) => left.sort_order - right.sort_order);
+    .sort(
+      (left, right) =>
+        getSongSetNumber(left) - getSongSetNumber(right) ||
+        left.sort_order - right.sort_order,
+    );
   const suggestedSongs = songs
     .filter((song) => song.status === "suggested")
-    .sort((left, right) => left.sort_order - right.sort_order);
+    .sort(
+      (left, right) =>
+        left.title.localeCompare(right.title) ||
+        left.artist.localeCompare(right.artist),
+    );
   const archivedSongs = songs
     .filter((song) => song.status === "archived")
     .sort((left, right) => left.sort_order - right.sort_order);
   const activeSets = Array.from({ length: 4 }, (_value, index) => ({
     label: `Set ${index + 1}`,
-    songs: activeSongs.slice(index * 10, index * 10 + 10),
+    setNumber: index + 1,
+    songs: activeSongs.filter((song) => getSongSetNumber(song) === index + 1),
   }));
-  const additionalActiveSongs = activeSongs.slice(40);
+  const defaultActiveSetNumber =
+    activeSets.findLast((setGroup) => setGroup.songs.length > 0)?.setNumber ?? 1;
 
   function openPrintExport(title: string, bodyMarkup: string) {
     if (typeof window === "undefined") {
@@ -407,17 +491,7 @@ export function SongsBoard() {
       })
       .join("");
 
-    const overflow =
-      additionalActiveSongs.length > 0
-        ? `<section class="export-section"><h2>Additional Songs</h2><ol>${additionalActiveSongs
-            .map(
-              (song) =>
-                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span></li>`,
-            )
-            .join("")}</ol></section>`
-        : "";
-
-    openPrintExport("Active Set List", `${sections}${overflow}`);
+    openPrintExport("Active Set List", sections);
   }
 
   function exportSuggestedSongs() {
@@ -426,7 +500,7 @@ export function SongsBoard() {
         ? suggestedSongs
             .map(
               (song) =>
-                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span></li>`,
+                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span>${suggestionVoteCountMap.get(song.id) ? ` <span class="artist">(${suggestionVoteCountMap.get(song.id)} votes)</span>` : ""}</li>`,
             )
             .join("")
         : "<li>No suggested songs right now.</li>";
@@ -435,6 +509,161 @@ export function SongsBoard() {
       "Suggested Songs",
       `<section class="export-section"><h2>Suggested Songs</h2><ul>${items}</ul></section>`,
     );
+  }
+
+  async function toggleSuggestionVote(song: SongRecord) {
+    if (!currentMember || !supabase) {
+      return;
+    }
+
+    if (!currentMember.can_vote) {
+      setErrorMessage("This member account can suggest songs, but voting is disabled.");
+      setStatusMessage(null);
+      return;
+    }
+
+    const client = supabase;
+    const songId = song.id;
+    const explicitVoteCount = suggestionVoteCountMap.get(songId) ?? 0;
+    const implicitActiveApproval =
+      (song.status === "active" || song.status === "selected") &&
+      explicitVoteCount < votingMemberCount &&
+      votingMemberCount > 0;
+    const hasVoted = implicitActiveApproval || currentMemberVoteSet.has(songId);
+
+    setBusyKey(`vote:${songId}`);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      if (hasVoted) {
+        const { error } = await client
+          .from("song_suggestion_votes")
+          .delete()
+          .eq("song_id", songId)
+          .eq("member_id", currentMember.id);
+
+        if (error) {
+          throw error;
+        }
+
+        let nextVotes = suggestionVotes.filter(
+          (vote) => !(vote.song_id === songId && vote.member_id === currentMember.id),
+        );
+
+        if (implicitActiveApproval) {
+          const existingMemberIds = new Set(
+            nextVotes.filter((vote) => vote.song_id === songId).map((vote) => vote.member_id),
+          );
+
+          nextVotes = [
+            ...nextVotes,
+            ...votingMembers
+              .filter(
+                (member) =>
+                  member.id !== currentMember.id && !existingMemberIds.has(member.id),
+              )
+              .map((member) => ({
+                song_id: songId,
+                member_id: member.id,
+              })),
+          ];
+        }
+
+        const nextVoteCount = nextVotes.filter((vote) => vote.song_id === songId).length;
+        const approvedMemberCount = votingMemberCount;
+
+        if (
+          (song.status === "active" || song.status === "selected") &&
+          approvedMemberCount > 0 &&
+          nextVoteCount < approvedMemberCount
+        ) {
+          const { error: stageError } = await client
+            .from("songs")
+            .update({
+              status: "suggested",
+              sort_order: suggestedSongs.length,
+            })
+            .eq("id", songId);
+
+          if (stageError) {
+            throw stageError;
+          }
+
+          setSuggestionVotes(nextVotes);
+          setSongs((current) =>
+            current.map((entry) =>
+              entry.id === songId
+                ? {
+                    ...entry,
+                    status: "suggested",
+                    sort_order: suggestedSongs.length,
+                  }
+                : entry,
+            ),
+          );
+          setStatusMessage("Song moved back to suggested songs.");
+        } else {
+          setSuggestionVotes(nextVotes);
+          setStatusMessage("Vote removed.");
+        }
+      } else {
+        const { data, error } = await client
+          .from("song_suggestion_votes")
+          .insert({
+            song_id: songId,
+            member_id: currentMember.id,
+          })
+          .select("song_id, member_id")
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        const nextVotes = [...suggestionVotes, data];
+        const nextVoteCount = nextVotes.filter((vote) => vote.song_id === songId).length;
+        const approvedMemberCount = votingMemberCount;
+
+        if (approvedMemberCount > 0 && nextVoteCount >= approvedMemberCount) {
+          const nextNotes = withSongSetNumber(song, defaultActiveSetNumber);
+          const { error: stageError } = await client
+            .from("songs")
+            .update({
+              status: "active",
+              sort_order: activeSongs.length,
+              notes: nextNotes,
+            })
+            .eq("id", songId);
+
+          if (stageError) {
+            throw stageError;
+          }
+
+          setSuggestionVotes(nextVotes);
+          setSongs((current) =>
+            current.map((song) =>
+              song.id === songId
+                ? {
+                    ...song,
+                    status: "active",
+                    sort_order: activeSongs.length,
+                    notes: nextNotes,
+                  }
+                : song,
+            ),
+          );
+          setStatusMessage("Song moved to the active set list.");
+        } else {
+          setSuggestionVotes(nextVotes);
+          setStatusMessage("Vote added.");
+        }
+      }
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, "Unable to update song vote."));
+    } finally {
+      setBusyKey(null);
+    }
   }
 
   async function updateConfidence(songId: string, confidence: SongConfidence) {
@@ -541,6 +770,11 @@ export function SongsBoard() {
     const client = supabase;
     const nextBucket = status === "suggested" ? suggestedSongs : activeSongs;
     const nextSortOrder = nextBucket.length;
+    const currentSong = songs.find((song) => song.id === songId) ?? null;
+    const nextNotes =
+      status === "active" && currentSong
+        ? withSongSetNumber(currentSong, defaultActiveSetNumber)
+        : currentSong?.notes ?? null;
 
     setBusyKey(`stage:${songId}:${status}`);
     setErrorMessage(null);
@@ -553,6 +787,7 @@ export function SongsBoard() {
           status,
           sort_order:
             status === "active" || status === "suggested" ? nextSortOrder : 0,
+          notes: nextNotes,
         })
         .eq("id", songId);
 
@@ -570,6 +805,7 @@ export function SongsBoard() {
                   status === "active" || status === "suggested"
                     ? nextSortOrder
                     : song.sort_order,
+                notes: song.id === songId ? nextNotes : song.notes,
               }
             : song,
         ),
@@ -643,11 +879,18 @@ export function SongsBoard() {
       draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
     const insertionIndex =
       position === "after" ? adjustedTargetIndex + 1 : adjustedTargetIndex;
+    const targetSong = bucketSongs[targetIndex];
 
     reordered.splice(insertionIndex, 0, draggedSong);
+    const nextActiveSetNumber =
+      bucket === "active" && targetSong ? getSongSetNumber(targetSong) : null;
     const updates = reordered.map((song, index) => ({
       id: song.id,
       sort_order: index,
+      notes:
+        bucket === "active" && song.id === draggedSongId && nextActiveSetNumber
+          ? withSongSetNumber(song, nextActiveSetNumber)
+          : song.notes,
     }));
 
     setBusyKey(`reorder:${bucket}`);
@@ -657,7 +900,10 @@ export function SongsBoard() {
     try {
       const results = await Promise.all(
         updates.map((update) =>
-          client.from("songs").update({ sort_order: update.sort_order }).eq("id", update.id),
+          client
+            .from("songs")
+            .update({ sort_order: update.sort_order, notes: update.notes })
+            .eq("id", update.id),
         ),
       );
 
@@ -670,7 +916,9 @@ export function SongsBoard() {
       setSongs((current) =>
         current.map((song) => {
           const next = updates.find((update) => update.id === song.id);
-          return next ? { ...song, sort_order: next.sort_order } : song;
+          return next
+            ? { ...song, sort_order: next.sort_order, notes: next.notes }
+            : song;
         }),
       );
       setStatusMessage(
@@ -690,20 +938,87 @@ export function SongsBoard() {
     }
   }
 
+  async function moveActiveSongToSet(songId: string, setNumber: number) {
+    if (!currentMember?.is_admin || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+    const reordered = activeSongs.filter((song) => song.id !== songId);
+    const draggedSong = activeSongs.find((song) => song.id === songId);
+
+    if (!draggedSong) {
+      return;
+    }
+
+    reordered.push(draggedSong);
+    const updates = reordered.map((song, index) => ({
+      id: song.id,
+      sort_order: index,
+      notes:
+        song.id === songId ? withSongSetNumber(song, setNumber) : song.notes,
+    }));
+
+    setBusyKey(`reorder:active`);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const results = await Promise.all(
+        updates.map((update) =>
+          client
+            .from("songs")
+            .update({ sort_order: update.sort_order, notes: update.notes })
+            .eq("id", update.id),
+        ),
+      );
+
+      const failedResult = results.find((result) => result.error);
+
+      if (failedResult?.error) {
+        throw failedResult.error;
+      }
+
+      setSongs((current) =>
+        current.map((song) => {
+          const next = updates.find((update) => update.id === song.id);
+          return next
+            ? { ...song, sort_order: next.sort_order, notes: next.notes }
+            : song;
+        }),
+      );
+      setStatusMessage(`Moved song to Set ${setNumber}.`);
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, "Unable to move song to that set."));
+    } finally {
+      setBusyKey(null);
+      setDragSongId(null);
+      setDragBucket(null);
+      setDropIndicator(null);
+    }
+  }
+
   function renderSongRow(song: SongRecord, index?: number) {
     const confidenceMap = songStatusMap.get(song.id) ?? new Map<string, SongConfidence>();
     const currentConfidence = currentMember
       ? confidenceMap.get(currentMember.id) ?? "dont_know"
       : "dont_know";
     const songBucket = getSongBucket(song);
-    const isDraggable =
-      Boolean(currentMember?.is_admin) &&
-      (songBucket === "active" || songBucket === "suggested");
+    const isDraggable = Boolean(currentMember?.is_admin) && songBucket === "active";
     const isDragSource = dragSongId === song.id && dragBucket === songBucket;
     const rowDropPosition =
       dropIndicator?.songId === song.id && dropIndicator.bucket === songBucket
         ? dropIndicator.position
         : null;
+    const explicitVoteCount = suggestionVoteCountMap.get(song.id) ?? 0;
+    const implicitActiveApproval =
+      (song.status === "active" || song.status === "selected") &&
+      explicitVoteCount < votingMemberCount &&
+      votingMemberCount > 0;
+    const voteCount = implicitActiveApproval ? votingMemberCount : explicitVoteCount;
+    const currentMemberHasVoted = implicitActiveApproval
+      ? true
+      : currentMemberVoteSet.has(song.id);
 
     return (
       <li
@@ -794,27 +1109,59 @@ export function SongsBoard() {
           </div>
         </div>
 
-        <div className="song-board-avatars">
-          {members.map((member) => {
-            const confidence = confidenceMap.get(member.id) ?? "dont_know";
-
-            return (
-              <div
-                key={member.id}
-                className={`song-avatar song-avatar-${confidence}${currentMember?.id === member.id ? " is-current" : ""}`}
-                title={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
-              >
-                {member.avatar_url ? (
-                  <img src={member.avatar_url} alt={member.display_name} />
-                ) : (
-                  <span>{getMemberInitials(member.display_name)}</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
         <div className="song-board-controls">
+          {(song.status === "suggested" ||
+            song.status === "active" ||
+            song.status === "selected") &&
+          currentMember ? (
+            <button
+              type="button"
+              className={`vote-chip vote-chip-vote vote-chip-icon${currentMemberHasVoted ? " is-active" : ""}`}
+              disabled={busyKey === `vote:${song.id}` || !currentMember.can_vote}
+              onClick={() => void toggleSuggestionVote(song)}
+              title={
+                !currentMember.can_vote
+                  ? `${voteCount} total votes`
+                  : currentMemberHasVoted
+                    ? `Remove vote (${voteCount} total)`
+                    : `Vote in (${voteCount} total)`
+              }
+              aria-label={
+                !currentMember.can_vote
+                  ? `${voteCount} total votes. Voting is disabled for this member.`
+                  : currentMemberHasVoted
+                    ? `Remove vote. ${voteCount} total votes.`
+                    : `Vote in. ${voteCount} total votes.`
+              }
+            >
+              <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
+                <path d="M8.6 2.5a1 1 0 0 1 .95 1.31l-1.13 3.38h5.2c1.44 0 2.43 1.42 1.95 2.77l-2.04 5.74A2 2 0 0 1 11.65 17H5.5a2 2 0 0 1-2-2V8.86a2 2 0 0 1 .59-1.42l2.74-2.75A2 2 0 0 0 7.3 3.8l.35-1.05a1 1 0 0 1 .95-.25Z" />
+                <path d="M3 8.25h1.5V17H3.75A.75.75 0 0 1 3 16.25v-8Z" />
+              </svg>
+              <span>{voteCount}</span>
+            </button>
+          ) : null}
+
+          <div className="song-board-avatars">
+            {members.map((member) => {
+              const confidence = confidenceMap.get(member.id) ?? "dont_know";
+
+              return (
+                <div
+                  key={member.id}
+                  className={`song-avatar song-avatar-${confidence}${currentMember?.id === member.id ? " is-current" : ""}`}
+                  title={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
+                >
+                  {member.avatar_url ? (
+                    <img src={member.avatar_url} alt={member.display_name} />
+                  ) : (
+                    <span>{getMemberInitials(member.display_name)}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           {currentMember ? (
             <div className="confidence-toggle" aria-label="Set confidence">
               {(["dont_know", "kind_of_know", "know_it"] as SongConfidence[]).map(
@@ -830,9 +1177,9 @@ export function SongsBoard() {
                     onClick={() => void updateConfidence(song.id, confidence)}
                   >
                     {confidence === "dont_know"
-                      ? "No"
+                      ? "Not Ready"
                       : confidence === "kind_of_know"
-                        ? "Close"
+                        ? "Almost Ready"
                         : "Ready"}
                   </button>
                 ),
@@ -841,27 +1188,6 @@ export function SongsBoard() {
           ) : null}
 
           <div className="song-board-actions">
-            {currentMember?.is_admin && song.status === "suggested" ? (
-              <button
-                type="button"
-                className="vote-chip"
-                disabled={busyKey === `stage:${song.id}:active`}
-                onClick={() => void updateSongStage(song.id, "active")}
-              >
-                Add To Active
-              </button>
-            ) : null}
-            {currentMember?.is_admin &&
-            (song.status === "active" || song.status === "selected") ? (
-              <button
-                type="button"
-                className="vote-chip"
-                disabled={busyKey === `stage:${song.id}:suggested`}
-                onClick={() => void updateSongStage(song.id, "suggested")}
-              >
-                Move To Suggested
-              </button>
-            ) : null}
             {currentMember?.is_admin && song.status === "archived" ? (
               <button
                 type="button"
@@ -882,10 +1208,10 @@ export function SongsBoard() {
                 Restore To Suggested
               </button>
             ) : null}
-            {currentMember?.is_admin && song.status !== "archived" ? (
+            {currentMember?.is_admin && song.status === "suggested" ? (
               <button
                 type="button"
-                className="vote-chip"
+                className="vote-chip archive-action"
                 disabled={busyKey === `stage:${song.id}:archived`}
                 onClick={() => void updateSongStage(song.id, "archived")}
               >
@@ -976,15 +1302,6 @@ export function SongsBoard() {
                 {busyKey === "import:default" ? "Importing..." : "Import Current Set"}
               </button>
             ) : null}
-            <button
-              type="button"
-              className="songs-archived-toggle"
-              onClick={() => setShowArchived((current) => !current)}
-            >
-              {showArchived
-                ? "Hide Archived Songs"
-                : `Show Archived Songs (${archivedSongs.length})`}
-            </button>
           </div>
         ) : null}
 
@@ -1029,32 +1346,37 @@ export function SongsBoard() {
               <section key={setGroup.label} className="active-set-card">
                 <div className="active-set-heading">
                   <h3>{setGroup.label}</h3>
-                  <span>{setGroup.songs.length}/10 songs</span>
+                  <span>
+                    {setGroup.songs.length} song{setGroup.songs.length === 1 ? "" : "s"}
+                  </span>
                 </div>
                 {setGroup.songs.length > 0 ? (
                   <ol className="songs-board-list songs-board-list-numbered">
                     {setGroup.songs.map((song, index) =>
-                      renderSongRow(song, (Number(setGroup.label.split(" ")[1]) - 1) * 10 + index),
+                      renderSongRow(song, index),
                     )}
                   </ol>
                 ) : (
-                  <p className="songs-auth-copy">No songs in this set yet.</p>
+                  <div
+                    className={`active-set-dropzone${
+                      dragBucket === "active" ? " is-active" : ""
+                    }`}
+                    onDragOver={(event) => {
+                      if (dragBucket === "active") {
+                        event.preventDefault();
+                      }
+                    }}
+                    onDrop={() => {
+                      if (dragSongId && dragBucket === "active") {
+                        void moveActiveSongToSet(dragSongId, setGroup.setNumber);
+                      }
+                    }}
+                  >
+                    <p className="songs-auth-copy">Drag a song here to place it in this set.</p>
+                  </div>
                 )}
               </section>
             ))}
-            {additionalActiveSongs.length > 0 ? (
-              <section className="active-set-card active-set-card-overflow">
-                <div className="active-set-heading">
-                  <h3>Additional Songs</h3>
-                  <span>{additionalActiveSongs.length} overflow</span>
-                </div>
-                <ol className="songs-board-list songs-board-list-numbered">
-                  {additionalActiveSongs.map((song, index) =>
-                    renderSongRow(song, 40 + index),
-                  )}
-                </ol>
-              </section>
-            ) : null}
           </div>
         ) : (
           <p className="songs-auth-copy">No active songs match this view yet.</p>
@@ -1076,6 +1398,20 @@ export function SongsBoard() {
           </p>
         )}
       </article>
+
+      {currentMember?.is_admin ? (
+        <div className="songs-archived-toggle-wrap">
+          <button
+            type="button"
+            className="songs-archived-toggle"
+            onClick={() => setShowArchived((current) => !current)}
+          >
+            {showArchived
+              ? "Hide Archived Songs"
+              : `Show Archived Songs (${archivedSongs.length})`}
+          </button>
+        </div>
+      ) : null}
 
       {currentMember?.is_admin && showArchived ? (
         <article className="panel section">
