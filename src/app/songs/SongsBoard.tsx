@@ -818,6 +818,69 @@ export function SongsBoard() {
     }
   }
 
+  async function editSong(song: SongRecord) {
+    if (!currentMember?.is_admin || !supabase) {
+      return;
+    }
+
+    const nextTitle = window.prompt("Song title", song.title)?.trim();
+    if (!nextTitle) {
+      return;
+    }
+
+    const nextArtist = window.prompt("Artist", song.artist)?.trim();
+    if (!nextArtist) {
+      return;
+    }
+
+    setBusyKey(`edit:${song.id}`);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Missing member session. Please sign in again.");
+      }
+
+      const response = await fetch("/api/song-admin", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          songId: song.id,
+          title: nextTitle,
+          artist: nextArtist,
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        error?: string;
+        merged?: boolean;
+        keptSongId?: string;
+        removedSongId?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Unable to update song.");
+      }
+
+      await loadBoard();
+      setStatusMessage(payload.merged ? "Songs merged automatically." : "Song updated.");
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, "Unable to update song."));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   async function importDefaultSongs() {
     if (!currentMember?.is_admin || !supabase) {
       return;
@@ -1188,6 +1251,16 @@ export function SongsBoard() {
           ) : null}
 
           <div className="song-board-actions">
+            {currentMember?.is_admin ? (
+              <button
+                type="button"
+                className="vote-chip archive-action"
+                disabled={busyKey === `edit:${song.id}`}
+                onClick={() => void editSong(song)}
+              >
+                Edit
+              </button>
+            ) : null}
             {currentMember?.is_admin && song.status === "archived" ? (
               <button
                 type="button"
