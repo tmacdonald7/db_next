@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import Link from "next/link";
 import { bandName, brandTagline } from "@/lib/brand";
+import { themeTokens } from "@/app/style-guide/page";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
@@ -17,7 +18,9 @@ const sourceSans3 = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://thedecibels.thomasgrantmacdonald.com"),
+  metadataBase: new URL(
+    "https://thefeedbackcommittee.netlify.app/",
+  ),
   title: {
     default: `${bandName} | Classic Rock for Montgomery, Conroe, and Houston`,
     template: `%s | ${bandName}`,
@@ -39,11 +42,24 @@ export default function RootLayout({
     { href: "/book", label: "Booking" },
     { href: "/epk", label: "EPK" },
     { href: "/blog", label: "Blog" },
+    { href: "/style-guide", label: "Style Guide" },
   ];
+
+  const rootCss = `:root {
+  --background: ${themeTokens.colors.background};
+  --foreground: ${themeTokens.colors.foreground};
+  --surface: ${themeTokens.colors.surface};
+  --surface-muted: ${themeTokens.colors.surfaceMuted};
+  --border: ${themeTokens.colors.border};
+  --accent: ${themeTokens.colors.accent};
+  --accent-deep: ${themeTokens.colors.accentDeep};
+  --max-width: ${themeTokens.maxWidth};
+}`;
 
   return (
     <html lang="en">
       <body className={`${playfairDisplay.variable} ${sourceSans3.variable}`}>
+        <style dangerouslySetInnerHTML={{ __html: rootCss }} />
         <div className="site-shell">
           <header className="site-header">
             <div className="container nav-wrap">

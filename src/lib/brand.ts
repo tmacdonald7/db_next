@@ -1,8 +1,8 @@
-export const bandName = "The Decibels";
+export const bandName = "The Feedback Committee";
 export const brandTagline = "Classic Rock. Elevated.";
 
 export const ctaLabels = {
-  primary: "Book The Decibels",
+  primary: "Book The Feedback Committee",
   secondary: "View Media",
 };
 

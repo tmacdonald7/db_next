@@ -1,4 +1,4 @@
-# The Decibels Website (`db_next`)
+# The Feedback Committee Website (`db_next`)
 
 Production-oriented Next.js site for an upscale classic rock band targeting bookings in Montgomery, Conroe, and Houston.
 
@@ -21,6 +21,7 @@ Production-oriented Next.js site for an upscale classic rock band targeting book
 - `/epk` EPK placeholders
 - `/blog` Blog index
 - `/blog/[slug]` Blog post page
+- `/style-guide` Style guide (typography + colors)
 
 ## Local Development
 
@@ -79,22 +80,11 @@ Set environment variables in Netlify UI:
 - (later) `STRAPI_URL`
 - (later) `STRAPI_TOKEN`
 
-## Domain + Netlify Setup
+## Netlify Site URL
 
-Target production domain:
+Current Netlify URL:
 
-- `thedecibels.thomasgrantmacdonald.com`
+- `https://thefeedbackcommittee.netlify.app/`
 
-Steps:
-
-1. In Netlify, add custom domain `thedecibels.thomasgrantmacdonald.com` to this site.
-2. In Cloudflare DNS for `thomasgrantmacdonald.com`, add a DNS record for subdomain `thedecibels`.
-3. Preferred record style: `CNAME` from `thedecibels` to your Netlify subdomain target (for example `<site-name>.netlify.app`).
-4. Alternate approach: if Netlify provides A record instructions for apex-like handling, follow Netlify docs, but for this subdomain a `CNAME` is the typical path.
-5. Wait for DNS propagation and verify Netlify marks the domain as active.
-6. SSL certificate issuance is handled by Netlify automatically after DNS validates.
-
-Notes:
-
-- The root/apex domain `thomasgrantmacdonald.com` does not need to change for this subdomain launch.
-- No separate landing page on `www.thomasgrantmacdonald.com` is required for subdomain hosting.
+If you later attach a custom domain, update `metadataBase` in `src/app/layout.tsx`
+to match the canonical production URL.

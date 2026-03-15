@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Home",
     description:
-      "Book The Decibels for polished classic rock performances at upscale patios, country clubs, private celebrations, and corporate events in Montgomery, Conroe, and Houston.",
+      "Book The Feedback Committee for polished classic rock performances at upscale patios, country clubs, private celebrations, and corporate events in Montgomery, Conroe, and Houston.",
   };
 }
 
@@ -23,22 +23,26 @@ type IdealForItem = {
 const idealFor: IdealForItem[] = [
   {
     title: "Upscale patios & established venues",
-    description: "Polished classic rock tailored for hospitality-driven environments.",
+    description:
+      "Polished classic rock tailored for hospitality-driven environments.",
     icon: "patio",
   },
   {
     title: "Country clubs & member events",
-    description: "Professional stage presence and a repertoire that fits club standards.",
+    description:
+      "Professional stage presence and a repertoire that fits club standards.",
     icon: "club",
   },
   {
     title: "Corporate receptions & client nights",
-    description: "Controlled volume, clean production, and reliable pacing for networking-focused events.",
+    description:
+      "Controlled volume, clean production, and reliable pacing for networking-focused events.",
     icon: "corporate",
   },
   {
     title: "Private celebrations & milestone evenings",
-    description: "Energy that builds naturally — from dinner ambience to confident singalong moments.",
+    description:
+      "Energy that builds naturally — from dinner ambience to confident singalong moments.",
     icon: "private",
   },
 ];
@@ -46,7 +50,15 @@ const idealFor: IdealForItem[] = [
 function IdealForIcon({ icon }: { icon: IdealForItem["icon"] }) {
   if (icon === "patio") {
     return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
         <path d="M4 19h16M12 5v14M6 9h12M8.5 9l-3-3M15.5 9l3-3" />
       </svg>
     );
@@ -54,7 +66,15 @@ function IdealForIcon({ icon }: { icon: IdealForItem["icon"] }) {
 
   if (icon === "club") {
     return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
         <path d="M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z" />
       </svg>
     );
@@ -62,14 +82,30 @@ function IdealForIcon({ icon }: { icon: IdealForItem["icon"] }) {
 
   if (icon === "corporate") {
     return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
         <path d="M3 20h18M5 20V8h14v12M9 8V5h6v3M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01" />
       </svg>
     );
   }
 
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
       <path d="M4 20h16M6 20V9l6-4 6 4v11M10 13h4M10 16h4" />
     </svg>
   );
@@ -81,7 +117,10 @@ export default function HomePage() {
       <section className="page-header">
         <p className="eyebrow">Montgomery | Conroe | Houston</p>
         <h1>{bandName}</h1>
-        <p>{brandTagline} Built for venues that value strong musicianship, clean presentation, and reliable event execution.</p>
+        <p>
+          {brandTagline} Built for venues that value strong musicianship, clean
+          presentation, and reliable event execution.
+        </p>
         <div className="cta-row">
           <Link href="/book" className="button-primary">
             {ctaLabels.primary}
@@ -125,12 +164,21 @@ export default function HomePage() {
                   borderRadius: "999px",
                   border: "1px solid var(--border)",
                   color: "var(--accent-deep)",
-                  background: "color-mix(in srgb, var(--surface-muted) 82%, #fff)",
+                  background:
+                    "color-mix(in srgb, var(--surface-muted) 82%, #fff)",
                 }}
               >
                 <IdealForIcon icon={item.icon} />
               </span>
-              <h3 style={{ fontSize: "1.2rem", lineHeight: 1.2, marginTop: "0.7rem" }}>{item.title}</h3>
+              <h3
+                style={{
+                  fontSize: "1.2rem",
+                  lineHeight: 1.2,
+                  marginTop: "0.7rem",
+                }}
+              >
+                {item.title}
+              </h3>
               <p style={{ marginTop: "0.55rem" }}>{item.description}</p>
             </article>
           ))}
@@ -146,8 +194,18 @@ export default function HomePage() {
         <div className="grid md:grid-cols-3">
           {testimonials.map((testimonial) => (
             <article key={testimonial.source} className="panel">
-              <p style={{ fontStyle: "italic" }}>&quot;{testimonial.quote}&quot;</p>
-              <p style={{ marginTop: "0.7rem", fontSize: "0.9rem", fontWeight: 600 }}>{testimonial.source}</p>
+              <p style={{ fontStyle: "italic" }}>
+                &quot;{testimonial.quote}&quot;
+              </p>
+              <p
+                style={{
+                  marginTop: "0.7rem",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                }}
+              >
+                {testimonial.source}
+              </p>
             </article>
           ))}
         </div>

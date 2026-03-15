@@ -13,8 +13,11 @@ export default function BookingPage() {
   return (
     <div className="container">
       <section className="page-header">
-        <h1>Book The Decibels</h1>
-        <p>Share event details below so we can respond with an accurate availability and pricing proposal.</p>
+        <h1>Book The Feedback Committee</h1>
+        <p>
+          Share event details below so we can respond with an accurate
+          availability and pricing proposal.
+        </p>
       </section>
       <section className="section">
         <BookingForm />
