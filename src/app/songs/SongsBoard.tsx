@@ -175,7 +175,21 @@ export function SongsBoard() {
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [impersonatedMemberId, setImpersonatedMemberId] = useState<string | null>(null);
+  const [mobileReadinessToast, setMobileReadinessToast] = useState<{
+    songId: string;
+    message: string;
+    tone: SongConfidence;
+  } | null>(null);
   const songRowRefs = useRef(new Map<string, HTMLLIElement>());
+  const mobileReadinessToastTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (mobileReadinessToastTimeoutRef.current !== null && typeof window !== "undefined") {
+        window.clearTimeout(mobileReadinessToastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setHasPublicConfig(hasSupabasePublicConfig());
@@ -622,6 +636,34 @@ export function SongsBoard() {
     }
   }
 
+  function showMobileReadinessPopup(songId: string, confidence: SongConfidence) {
+    if (typeof window === "undefined" || window.innerWidth > 760) {
+      return;
+    }
+
+    if (mobileReadinessToastTimeoutRef.current !== null) {
+      window.clearTimeout(mobileReadinessToastTimeoutRef.current);
+    }
+
+    const message =
+      confidence === "dont_know"
+        ? "Needs Work"
+        : confidence === "kind_of_know"
+          ? "Getting There"
+          : "Gig Ready";
+
+    setMobileReadinessToast({
+      songId,
+      message,
+      tone: confidence,
+    });
+
+    mobileReadinessToastTimeoutRef.current = window.setTimeout(() => {
+      setMobileReadinessToast((current) => (current?.songId === songId ? null : current));
+      mobileReadinessToastTimeoutRef.current = null;
+    }, 1100);
+  }
+
   async function runImpersonatedAction(
     payload:
       | { action: "toggle_vote"; songId: string }
@@ -892,6 +934,22 @@ export function SongsBoard() {
     } finally {
       setBusyKey(null);
     }
+  }
+
+  async function cycleMobileConfidence(song: SongRecord, currentConfidence: SongConfidence) {
+    if (typeof window === "undefined" || window.innerWidth > 760) {
+      return;
+    }
+
+    const nextConfidence =
+      currentConfidence === "dont_know"
+        ? "kind_of_know"
+        : currentConfidence === "kind_of_know"
+          ? "know_it"
+          : "dont_know";
+
+    await updateConfidence(song.id, nextConfidence);
+    showMobileReadinessPopup(song.id, nextConfidence);
   }
 
   async function handleSuggestionSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1279,6 +1337,8 @@ export function SongsBoard() {
     const currentMemberHasVoted = implicitActiveApproval
       ? true
       : currentMemberVoteSet.has(song.id);
+    const isMobileToastVisible =
+      mobileReadinessToast?.songId === song.id ? ` is-visible is-${mobileReadinessToast.tone}` : "";
 
     return (
       <li
@@ -1412,18 +1472,44 @@ export function SongsBoard() {
           <div className="song-board-avatars">
             {visibleVotingMembers.map((member) => {
               const confidence = confidenceMap.get(member.id) ?? "dont_know";
+              const isCurrentMember = currentMember?.id === member.id;
+              const avatarClassName = `song-avatar song-avatar-${confidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
+              const avatarContent = member.avatar_url ? (
+                <img src={member.avatar_url} alt={member.display_name} />
+              ) : (
+                <span>{getMemberAvatarLabel(member)}</span>
+              );
+
+              if (
+                isCurrentMember &&
+                currentMember?.can_vote &&
+                song.status !== "archived"
+              ) {
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    className={`${avatarClassName} song-avatar-button`}
+                    title={`Tap to set your readiness. Current status: ${songConfidenceLabels[confidence]}`}
+                    aria-label={`Set your readiness for ${song.title}. Current status: ${songConfidenceLabels[confidence]}`}
+                    onClick={() => void cycleMobileConfidence(song, confidence)}
+                    disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
+                  >
+                    {avatarContent}
+                    <span className={`song-avatar-toast${isMobileToastVisible}`}>
+                      {mobileReadinessToast?.message}
+                    </span>
+                  </button>
+                );
+              }
 
               return (
                 <div
                   key={member.id}
-                  className={`song-avatar song-avatar-${confidence}${currentMember?.id === member.id ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`}
+                  className={avatarClassName}
                   title={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
                 >
-                  {member.avatar_url ? (
-                    <img src={member.avatar_url} alt={member.display_name} />
-                  ) : (
-                    <span>{getMemberAvatarLabel(member)}</span>
-                  )}
+                  {avatarContent}
                 </div>
               );
             })}
@@ -1668,6 +1754,9 @@ export function SongsBoard() {
             {errorMessage ?? statusMessage ?? "Ready."}
           </p>
         </div>
+        <p className="songs-mobile-readiness-note">
+          Tap your avatar in the song row to set your readiness.
+        </p>
       </div>
 
       <article className="panel section">
