@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   createSupabaseBrowserClient,
@@ -175,6 +175,7 @@ export function SongsBoard() {
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [impersonatedMemberId, setImpersonatedMemberId] = useState<string | null>(null);
+  const songRowRefs = useRef(new Map<string, HTMLLIElement>());
 
   useEffect(() => {
     setHasPublicConfig(hasSupabasePublicConfig());
@@ -591,6 +592,36 @@ export function SongsBoard() {
     );
   }
 
+  async function stabilizeSongRowViewport(songId: string, operation: () => Promise<void>) {
+    const row = songRowRefs.current.get(songId);
+    const beforeTop = row?.getBoundingClientRect().top ?? null;
+
+    await operation();
+
+    if (beforeTop === null || typeof window === "undefined") {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => resolve());
+      });
+    });
+
+    const nextRow = songRowRefs.current.get(songId);
+
+    if (!nextRow) {
+      return;
+    }
+
+    const afterTop = nextRow.getBoundingClientRect().top;
+    const scrollDelta = afterTop - beforeTop;
+
+    if (Math.abs(scrollDelta) > 0.5) {
+      window.scrollBy(0, scrollDelta);
+    }
+  }
+
   async function runImpersonatedAction(
     payload:
       | { action: "toggle_vote"; songId: string }
@@ -659,144 +690,146 @@ export function SongsBoard() {
     setStatusMessage(null);
 
     try {
-      if (isImpersonating) {
-        await runImpersonatedAction({
-          action: "toggle_vote",
-          songId,
-        });
-        return;
-      }
-
-      if (hasVoted) {
-        const { error } = await client
-          .from("song_suggestion_votes")
-          .delete()
-          .eq("song_id", songId)
-          .eq("member_id", currentMember.id);
-
-        if (error) {
-          throw error;
+      await stabilizeSongRowViewport(songId, async () => {
+        if (isImpersonating) {
+          await runImpersonatedAction({
+            action: "toggle_vote",
+            songId,
+          });
+          return;
         }
 
-        let nextVotes = suggestionVotes.filter(
-          (vote) => !(vote.song_id === songId && vote.member_id === currentMember.id),
-        );
+        if (hasVoted) {
+          const { error } = await client
+            .from("song_suggestion_votes")
+            .delete()
+            .eq("song_id", songId)
+            .eq("member_id", currentMember.id);
 
-        if (implicitActiveApproval) {
-          const existingMemberIds = new Set(
-            nextVotes.filter((vote) => vote.song_id === songId).map((vote) => vote.member_id),
-          );
-
-          nextVotes = [
-            ...nextVotes,
-            ...members
-              .filter(
-                (member) =>
-                  member.can_vote &&
-                  member.counts_toward_votes &&
-                  member.id !== currentMember.id &&
-                  !existingMemberIds.has(member.id),
-              )
-              .map((member) => ({
-                song_id: songId,
-                member_id: member.id,
-              })),
-          ];
-        }
-
-        const nextVoteCount = nextVotes.filter(
-          (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
-        ).length;
-        const approvedMemberCount = countedVotingMemberCount;
-
-        if (
-          (song.status === "active" || song.status === "selected") &&
-          approvedMemberCount > 0 &&
-          nextVoteCount < approvedMemberCount
-        ) {
-          const { error: stageError } = await client
-            .from("songs")
-            .update({
-              status: "suggested",
-              sort_order: suggestedSongs.length,
-            })
-            .eq("id", songId);
-
-          if (stageError) {
-            throw stageError;
+          if (error) {
+            throw error;
           }
 
-          setSuggestionVotes(nextVotes);
-          setSongs((current) =>
-            current.map((entry) =>
-              entry.id === songId
-                ? {
-                    ...entry,
-                    status: "suggested",
-                    sort_order: suggestedSongs.length,
-                  }
-                : entry,
-            ),
+          let nextVotes = suggestionVotes.filter(
+            (vote) => !(vote.song_id === songId && vote.member_id === currentMember.id),
           );
-          setStatusMessage("Song moved back to suggested songs.");
-        } else {
-          setSuggestionVotes(nextVotes);
-          setStatusMessage("Vote removed.");
-        }
-      } else {
-        const { data, error } = await client
-          .from("song_suggestion_votes")
-          .insert({
-            song_id: songId,
-            member_id: currentMember.id,
-          })
-          .select("song_id, member_id")
-          .single();
 
-        if (error) {
-          throw error;
-        }
+          if (implicitActiveApproval) {
+            const existingMemberIds = new Set(
+              nextVotes.filter((vote) => vote.song_id === songId).map((vote) => vote.member_id),
+            );
 
-        const nextVotes = [...suggestionVotes, data];
-        const nextVoteCount = nextVotes.filter(
-          (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
-        ).length;
-        const approvedMemberCount = countedVotingMemberCount;
-
-        if (approvedMemberCount > 0 && nextVoteCount >= approvedMemberCount) {
-          const nextNotes = withSongSetNumber(song, defaultActiveSetNumber);
-          const { error: stageError } = await client
-            .from("songs")
-            .update({
-              status: "active",
-              sort_order: activeSongs.length,
-              notes: nextNotes,
-            })
-            .eq("id", songId);
-
-          if (stageError) {
-            throw stageError;
+            nextVotes = [
+              ...nextVotes,
+              ...members
+                .filter(
+                  (member) =>
+                    member.can_vote &&
+                    member.counts_toward_votes &&
+                    member.id !== currentMember.id &&
+                    !existingMemberIds.has(member.id),
+                )
+                .map((member) => ({
+                  song_id: songId,
+                  member_id: member.id,
+                })),
+            ];
           }
 
-          setSuggestionVotes(nextVotes);
-          setSongs((current) =>
-            current.map((song) =>
-              song.id === songId
-                ? {
-                    ...song,
-                    status: "active",
-                    sort_order: activeSongs.length,
-                    notes: nextNotes,
-                  }
-                : song,
-            ),
-          );
-          setStatusMessage("Song moved to the active set list.");
+          const nextVoteCount = nextVotes.filter(
+            (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
+          ).length;
+          const approvedMemberCount = countedVotingMemberCount;
+
+          if (
+            (song.status === "active" || song.status === "selected") &&
+            approvedMemberCount > 0 &&
+            nextVoteCount < approvedMemberCount
+          ) {
+            const { error: stageError } = await client
+              .from("songs")
+              .update({
+                status: "suggested",
+                sort_order: suggestedSongs.length,
+              })
+              .eq("id", songId);
+
+            if (stageError) {
+              throw stageError;
+            }
+
+            setSuggestionVotes(nextVotes);
+            setSongs((current) =>
+              current.map((entry) =>
+                entry.id === songId
+                  ? {
+                      ...entry,
+                      status: "suggested",
+                      sort_order: suggestedSongs.length,
+                    }
+                  : entry,
+              ),
+            );
+            setStatusMessage("Song moved back to suggested songs.");
+          } else {
+            setSuggestionVotes(nextVotes);
+            setStatusMessage("Vote removed.");
+          }
         } else {
-          setSuggestionVotes(nextVotes);
-          setStatusMessage("Vote added.");
+          const { data, error } = await client
+            .from("song_suggestion_votes")
+            .insert({
+              song_id: songId,
+              member_id: currentMember.id,
+            })
+            .select("song_id, member_id")
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          const nextVotes = [...suggestionVotes, data];
+          const nextVoteCount = nextVotes.filter(
+            (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
+          ).length;
+          const approvedMemberCount = countedVotingMemberCount;
+
+          if (approvedMemberCount > 0 && nextVoteCount >= approvedMemberCount) {
+            const nextNotes = withSongSetNumber(song, defaultActiveSetNumber);
+            const { error: stageError } = await client
+              .from("songs")
+              .update({
+                status: "active",
+                sort_order: activeSongs.length,
+                notes: nextNotes,
+              })
+              .eq("id", songId);
+
+            if (stageError) {
+              throw stageError;
+            }
+
+            setSuggestionVotes(nextVotes);
+            setSongs((current) =>
+              current.map((song) =>
+                song.id === songId
+                  ? {
+                      ...song,
+                      status: "active",
+                      sort_order: activeSongs.length,
+                      notes: nextNotes,
+                    }
+                  : song,
+              ),
+            );
+            setStatusMessage("Song moved to the active set list.");
+          } else {
+            setSuggestionVotes(nextVotes);
+            setStatusMessage("Vote added.");
+          }
         }
-      }
+      });
     } catch (error) {
       setErrorMessage(getErrorMessage(error, "Unable to update song vote."));
     } finally {
@@ -815,43 +848,45 @@ export function SongsBoard() {
     setStatusMessage(null);
 
     try {
-      if (isImpersonating) {
-        await runImpersonatedAction({
-          action: "update_confidence",
-          songId,
-          confidence,
-        });
-        return;
-      }
+      await stabilizeSongRowViewport(songId, async () => {
+        if (isImpersonating) {
+          await runImpersonatedAction({
+            action: "update_confidence",
+            songId,
+            confidence,
+          });
+          return;
+        }
 
-      const { error } = await client.from("song_member_statuses").upsert(
-        {
-          song_id: songId,
-          member_id: currentMember.id,
-          confidence,
-        },
-        {
-          onConflict: "song_id,member_id",
-        },
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      setStatuses((current) => {
-        const next = current.filter(
-          (status) =>
-            !(status.song_id === songId && status.member_id === currentMember.id),
+        const { error } = await client.from("song_member_statuses").upsert(
+          {
+            song_id: songId,
+            member_id: currentMember.id,
+            confidence,
+          },
+          {
+            onConflict: "song_id,member_id",
+          },
         );
-        next.push({
-          song_id: songId,
-          member_id: currentMember.id,
-          confidence,
+
+        if (error) {
+          throw error;
+        }
+
+        setStatuses((current) => {
+          const next = current.filter(
+            (status) =>
+              !(status.song_id === songId && status.member_id === currentMember.id),
+          );
+          next.push({
+            song_id: songId,
+            member_id: currentMember.id,
+            confidence,
+          });
+          return next;
         });
-        return next;
+        setStatusMessage("Confidence updated.");
       });
-      setStatusMessage("Confidence updated.");
     } catch (error) {
       setErrorMessage(getErrorMessage(error, "Unable to update confidence."));
     } finally {
@@ -1248,6 +1283,13 @@ export function SongsBoard() {
     return (
       <li
         key={song.id}
+        ref={(node) => {
+          if (node) {
+            songRowRefs.current.set(song.id, node);
+          } else {
+            songRowRefs.current.delete(song.id);
+          }
+        }}
         className={`song-board-row${isDraggable ? " is-draggable" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
         draggable={isDraggable}
         onDragStart={(event) => {
