@@ -1829,6 +1829,8 @@ pre {
     background 180ms ease,
     color 180ms ease,
     box-shadow 180ms ease;
+}
+
 .vote-chip.is-active {
   color: var(--foreground);
   background: linear-gradient(
