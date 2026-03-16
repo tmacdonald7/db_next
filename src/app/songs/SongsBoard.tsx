@@ -1332,9 +1332,12 @@ export function SongsBoard() {
       (song.status === "active" || song.status === "selected") &&
       explicitVoteCount < countedVotingMemberCount &&
       countedVotingMemberCount > 0;
-    const voteCount = implicitActiveApproval
-      ? Math.max(visibleVoteCount, explicitVoteCount)
-      : visibleVoteCount;
+    const voteCount =
+      song.status === "active" || song.status === "selected"
+        ? countedVotingMemberCount
+        : implicitActiveApproval
+          ? countedVotingMemberCount
+          : visibleVoteCount;
     const currentMemberHasVoted = implicitActiveApproval
       ? true
       : currentMemberVoteSet.has(song.id);
@@ -1475,6 +1478,7 @@ export function SongsBoard() {
               const confidence = confidenceMap.get(member.id) ?? "dont_know";
               const isCurrentMember = currentMember?.id === member.id;
               const avatarClassName = `song-avatar song-avatar-${confidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
+              const avatarTooltip = `${member.display_name}: ${songConfidenceLabels[confidence]}`;
               const avatarContent = member.avatar_url ? (
                 <img src={member.avatar_url} alt={member.display_name} />
               ) : (
@@ -1497,6 +1501,7 @@ export function SongsBoard() {
                     disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
                   >
                     {avatarContent}
+                    <span className="song-avatar-tooltip">{avatarTooltip}</span>
                     <span className={`song-avatar-toast${isMobileToastVisible}`}>
                       {mobileReadinessToast?.message}
                     </span>
@@ -1508,9 +1513,10 @@ export function SongsBoard() {
                 <div
                   key={member.id}
                   className={avatarClassName}
-                  title={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
+                  aria-label={avatarTooltip}
                 >
                   {avatarContent}
+                  <span className="song-avatar-tooltip">{avatarTooltip}</span>
                 </div>
               );
             })}
