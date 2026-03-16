@@ -1677,6 +1677,8 @@ pre {
   appearance: none;
   padding: 0;
   cursor: default;
+  overflow: visible;
+  z-index: 1;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -1757,6 +1759,7 @@ pre {
   position: absolute;
   left: 50%;
   bottom: calc(100% + 0.4rem);
+  z-index: 3;
   transform: translate(-50%, 0.35rem) scale(0.94);
   opacity: 0;
   pointer-events: none;

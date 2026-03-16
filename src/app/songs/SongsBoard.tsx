@@ -637,7 +637,7 @@ export function SongsBoard() {
   }
 
   function showMobileReadinessPopup(songId: string, confidence: SongConfidence) {
-    if (typeof window === "undefined" || window.innerWidth > 760) {
+    if (typeof window === "undefined") {
       return;
     }
 
