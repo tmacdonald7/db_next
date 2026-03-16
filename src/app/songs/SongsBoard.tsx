@@ -1206,7 +1206,7 @@ export function SongsBoard() {
           ) : null}
 
           <div className="song-board-avatars">
-            {members.map((member) => {
+            {votingMembers.map((member) => {
               const confidence = confidenceMap.get(member.id) ?? "dont_know";
 
               return (
@@ -1235,7 +1235,15 @@ export function SongsBoard() {
                     className={currentConfidence === confidence ? "is-active" : undefined}
                     disabled={
                       busyKey === `confidence:${song.id}:${confidence}` ||
-                      song.status === "archived"
+                      song.status === "archived" ||
+                      !currentMember.can_vote
+                    }
+                    title={
+                      !currentMember.can_vote
+                        ? "Only band musicians can set song readiness."
+                        : song.status === "archived"
+                          ? "Archived songs cannot be updated."
+                          : undefined
                     }
                     onClick={() => void updateConfidence(song.id, confidence)}
                   >
