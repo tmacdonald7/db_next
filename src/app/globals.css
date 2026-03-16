@@ -1762,36 +1762,6 @@ pre {
   object-fit: cover;
 }
 
-.song-avatar-tooltip {
-  position: absolute;
-  right: calc(100% - 0.2rem);
-  bottom: calc(100% - 0.1rem);
-  z-index: 2;
-  opacity: 0;
-  transform: translateY(0.2rem);
-  pointer-events: none;
-  white-space: nowrap;
-  padding: 0.35rem 0.55rem;
-  border-radius: 0.7rem;
-  background: rgba(16, 20, 28, 0.96);
-  color: var(--foreground);
-  font-size: 0.68rem;
-  line-height: 1.2;
-  box-shadow:
-    0 12px 20px rgba(0, 0, 0, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-.song-avatar:hover .song-avatar-tooltip,
-.song-avatar-button:hover .song-avatar-tooltip,
-.song-avatar-button:focus-visible .song-avatar-tooltip {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .song-avatar-toast {
   position: absolute;
   right: calc(100% - 0.15rem);
@@ -1979,6 +1949,72 @@ pre {
   color: var(--foreground-muted);
   font-size: 0.78rem;
   line-height: 1.4;
+}
+
+.songs-board-legend {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.2rem;
+}
+
+.songs-board-legend-title {
+  margin: 0;
+  color: var(--secondary-soft);
+  font-family: var(--font-display-secondary);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.songs-board-legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+
+.songs-board-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  color: var(--foreground-muted);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.songs-board-legend-item-note {
+  color: var(--secondary-soft);
+}
+
+.songs-board-legend-swatch {
+  width: 1.15rem;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  font-size: 0.46rem;
+  box-shadow: none;
+}
+
+.songs-board-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) auto;
+  gap: 0.7rem;
+  align-items: end;
+  margin: 0 0 0.38rem;
+  padding: 0 0 0.16rem;
+  border-bottom: 1px solid rgba(212, 163, 115, 0.1);
+  color: var(--secondary-soft);
+  font-family: var(--font-display-secondary);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.songs-board-columns.has-actions {
+  grid-template-columns: minmax(0, 1.7fr) auto auto;
+}
+
+.songs-board-columns span:last-child {
+  text-align: right;
 }
 
 .active-set-dropzone {
@@ -2191,6 +2227,30 @@ pre {
   .songs-voting-item {
     grid-template-columns: 2.9rem 1fr;
     gap: 0.75rem;
+  }
+
+  .songs-board-columns,
+  .songs-board-columns.has-actions {
+    grid-template-columns: 1fr;
+    gap: 0.18rem;
+    margin-bottom: 0.28rem;
+    font-size: 0.62rem;
+  }
+
+  .songs-board-columns span:last-child {
+    text-align: left;
+  }
+
+  .songs-board-legend {
+    gap: 0.42rem;
+  }
+
+  .songs-board-legend-items {
+    gap: 0.42rem 0.7rem;
+  }
+
+  .songs-board-legend-item {
+    font-size: 0.74rem;
   }
 
   .song-board-controls {

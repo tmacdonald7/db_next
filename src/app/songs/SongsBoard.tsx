@@ -117,6 +117,50 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function renderSongsBoardLegend() {
+  return (
+    <div className="songs-board-legend" aria-label="Songs board legend">
+      <p className="songs-board-legend-title">Legend</p>
+      <div className="songs-board-legend-items">
+        <span className="songs-board-legend-item">
+          <span className="songs-board-legend-swatch song-avatar song-avatar-dont_know" aria-hidden="true">
+            ?
+          </span>
+          Needs work
+        </span>
+        <span className="songs-board-legend-item">
+          <span className="songs-board-legend-swatch song-avatar song-avatar-close" aria-hidden="true">
+            ~
+          </span>
+          Getting there
+        </span>
+        <span className="songs-board-legend-item">
+          <span className="songs-board-legend-swatch song-avatar song-avatar-ready" aria-hidden="true">
+            +
+          </span>
+          Gig ready
+        </span>
+        <span className="songs-board-legend-item songs-board-legend-item-note">
+          Your glowing avatar is clickable to set readiness.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function renderSongsBoardHeaders(showActions: boolean) {
+  return (
+    <div
+      className={`songs-board-columns${showActions ? " has-actions" : ""}`}
+      aria-hidden="true"
+    >
+      <span>Song</span>
+      <span>Votes + Readiness</span>
+      {showActions ? <span>Actions</span> : null}
+    </div>
+  );
+}
+
 type SongNotesMetadata = {
   setNumber?: number;
 };
@@ -1478,7 +1522,6 @@ export function SongsBoard() {
               const confidence = confidenceMap.get(member.id) ?? "dont_know";
               const isCurrentMember = currentMember?.id === member.id;
               const avatarClassName = `song-avatar song-avatar-${confidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
-              const avatarTooltip = `${member.display_name}: ${songConfidenceLabels[confidence]}`;
               const avatarContent = member.avatar_url ? (
                 <img src={member.avatar_url} alt={member.display_name} />
               ) : (
@@ -1495,13 +1538,11 @@ export function SongsBoard() {
                     key={member.id}
                     type="button"
                     className={`${avatarClassName} song-avatar-button`}
-                    title={`Set your readiness for ${song.title}. Current status: ${songConfidenceLabels[confidence]}`}
                     aria-label={`Set your readiness for ${song.title}. Current status: ${songConfidenceLabels[confidence]}`}
                     onClick={() => void cycleAvatarConfidence(song, confidence)}
                     disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
                   >
                     {avatarContent}
-                    <span className="song-avatar-tooltip">{avatarTooltip}</span>
                     <span className={`song-avatar-toast${isMobileToastVisible}`}>
                       {mobileReadinessToast?.message}
                     </span>
@@ -1513,10 +1554,9 @@ export function SongsBoard() {
                 <div
                   key={member.id}
                   className={avatarClassName}
-                  aria-label={avatarTooltip}
+                  aria-label={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
                 >
                   {avatarContent}
-                  <span className="song-avatar-tooltip">{avatarTooltip}</span>
                 </div>
               );
             })}
@@ -1731,6 +1771,7 @@ export function SongsBoard() {
         <p className="songs-mobile-readiness-note">
           Tap your avatar in the song row to set your readiness.
         </p>
+        {renderSongsBoardLegend()}
       </div>
 
       <article className="panel section">
@@ -1753,11 +1794,14 @@ export function SongsBoard() {
                   </span>
                 </div>
                 {setGroup.songs.length > 0 ? (
-                  <ol className="songs-board-list songs-board-list-numbered">
-                    {setGroup.songs.map((song, index) =>
-                      renderSongRow(song, index),
-                    )}
-                  </ol>
+                  <>
+                    {renderSongsBoardHeaders(Boolean(currentMember?.is_admin))}
+                    <ol className="songs-board-list songs-board-list-numbered">
+                      {setGroup.songs.map((song, index) =>
+                        renderSongRow(song, index),
+                      )}
+                    </ol>
+                  </>
                 ) : (
                   <div
                     className={`active-set-dropzone${
@@ -1793,7 +1837,10 @@ export function SongsBoard() {
           </button>
         </div>
         {suggestedSongs.length > 0 ? (
-          <ul className="songs-board-list">{suggestedSongs.map((song) => renderSongRow(song))}</ul>
+          <>
+            {renderSongsBoardHeaders(Boolean(currentMember?.is_admin))}
+            <ul className="songs-board-list">{suggestedSongs.map((song) => renderSongRow(song))}</ul>
+          </>
         ) : (
           <p className="songs-auth-copy">
             No suggested songs yet. Add one above to get the queue started.
@@ -1821,7 +1868,10 @@ export function SongsBoard() {
             <h2>Archived Songs</h2>
           </div>
           {archivedSongs.length > 0 ? (
-            <ul className="songs-board-list">{archivedSongs.map((song) => renderSongRow(song))}</ul>
+            <>
+              {renderSongsBoardHeaders(true)}
+              <ul className="songs-board-list">{archivedSongs.map((song) => renderSongRow(song))}</ul>
+            </>
           ) : (
             <p className="songs-auth-copy">No archived songs right now.</p>
           )}
