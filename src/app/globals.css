@@ -1676,7 +1676,7 @@ pre {
 .song-avatar-button {
   appearance: none;
   padding: 0;
-  cursor: default;
+  cursor: pointer;
   overflow: visible;
   z-index: 1;
   transition:
@@ -1745,8 +1745,28 @@ pre {
 .song-avatar.is-current {
   border-color: rgba(212, 163, 115, 0.5);
   box-shadow:
-    0 0 0 1px rgba(200, 90, 17, 0.16),
+    0 0 0 1px rgba(200, 90, 17, 0.22),
+    0 0 0 4px rgba(200, 90, 17, 0.1),
+    0 10px 20px rgba(200, 90, 17, 0.14),
     inset 0 1px 0 rgba(244, 239, 230, 0.04);
+}
+
+.song-avatar.is-current::after {
+  content: "";
+  position: absolute;
+  right: -0.08rem;
+  top: -0.08rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 212, 124, 0.98) 0%,
+    rgba(212, 135, 39, 0.98) 100%
+  );
+  box-shadow:
+    0 0 0 2px rgba(18, 22, 29, 0.96),
+    0 0 12px rgba(212, 135, 39, 0.28);
 }
 
 .song-avatar img {
@@ -2191,10 +2211,6 @@ pre {
     width: 1.5rem;
     height: 1.5rem;
     font-size: 0.56rem;
-  }
-
-  .song-avatar-button {
-    cursor: pointer;
   }
 
   .song-avatar.is-current {
