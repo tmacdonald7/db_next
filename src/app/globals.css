@@ -1677,10 +1677,23 @@ pre {
   appearance: none;
   padding: 0;
   cursor: default;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 
 .song-avatar-button:disabled {
   cursor: wait;
+}
+
+.song-avatar-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.song-avatar-button:not(:disabled):focus-visible {
+  outline: 2px solid rgba(212, 163, 115, 0.5);
+  outline-offset: 2px;
 }
 
 .song-avatar-investor {
@@ -1804,16 +1817,6 @@ pre {
   min-width: 0;
 }
 
-.confidence-toggle {
-  display: inline-flex;
-  border: 1px solid rgba(212, 163, 115, 0.18);
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(18, 22, 29, 0.88);
-  flex-shrink: 0;
-}
-
-.confidence-toggle button,
 .vote-chip {
   border: none;
   background: transparent;
@@ -1826,13 +1829,6 @@ pre {
     background 180ms ease,
     color 180ms ease,
     box-shadow 180ms ease;
-}
-
-.confidence-toggle button + button {
-  border-left: 1px solid rgba(212, 163, 115, 0.1);
-}
-
-.confidence-toggle button.is-active,
 .vote-chip.is-active {
   color: var(--foreground);
   background: linear-gradient(
@@ -1932,7 +1928,6 @@ pre {
 }
 
 .songs-mobile-readiness-note {
-  display: none;
   margin: -0.15rem 0 0;
   color: var(--foreground-muted);
   font-size: 0.78rem;
@@ -2219,14 +2214,6 @@ pre {
   .vote-chip-icon svg {
     width: 0.82rem;
     height: 0.82rem;
-  }
-
-  .confidence-toggle {
-    display: none;
-  }
-
-  .songs-mobile-readiness-note {
-    display: block;
   }
 
   .song-list li {

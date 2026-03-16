@@ -936,11 +936,7 @@ export function SongsBoard() {
     }
   }
 
-  async function cycleMobileConfidence(song: SongRecord, currentConfidence: SongConfidence) {
-    if (typeof window === "undefined" || window.innerWidth > 760) {
-      return;
-    }
-
+  async function cycleAvatarConfidence(song: SongRecord, currentConfidence: SongConfidence) {
     const nextConfidence =
       currentConfidence === "dont_know"
         ? "kind_of_know"
@@ -1490,9 +1486,9 @@ export function SongsBoard() {
                     key={member.id}
                     type="button"
                     className={`${avatarClassName} song-avatar-button`}
-                    title={`Tap to set your readiness. Current status: ${songConfidenceLabels[confidence]}`}
+                    title={`Set your readiness for ${song.title}. Current status: ${songConfidenceLabels[confidence]}`}
                     aria-label={`Set your readiness for ${song.title}. Current status: ${songConfidenceLabels[confidence]}`}
-                    onClick={() => void cycleMobileConfidence(song, confidence)}
+                    onClick={() => void cycleAvatarConfidence(song, confidence)}
                     disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
                   >
                     {avatarContent}
@@ -1514,39 +1510,6 @@ export function SongsBoard() {
               );
             })}
           </div>
-
-          {currentMember ? (
-            <div className="confidence-toggle" aria-label="Set confidence">
-              {(["dont_know", "kind_of_know", "know_it"] as SongConfidence[]).map(
-                (confidence) => (
-                  <button
-                    key={confidence}
-                    type="button"
-                    className={currentConfidence === confidence ? "is-active" : undefined}
-                    disabled={
-                      busyKey === `confidence:${song.id}:${confidence}` ||
-                      song.status === "archived" ||
-                      !currentMember.can_vote
-                    }
-                    title={
-                      !currentMember.can_vote
-                        ? "Only band musicians can set song readiness."
-                        : song.status === "archived"
-                          ? "Archived songs cannot be updated."
-                          : undefined
-                    }
-                    onClick={() => void updateConfidence(song.id, confidence)}
-                  >
-                    {confidence === "dont_know"
-                      ? "Not Ready"
-                      : confidence === "kind_of_know"
-                        ? "Almost Ready"
-                        : "Ready"}
-                  </button>
-                ),
-              )}
-            </div>
-          ) : null}
 
           <div className="song-board-actions">
             {currentMember?.is_admin ? (
