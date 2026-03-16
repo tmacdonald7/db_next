@@ -1209,12 +1209,20 @@ pre {
   font-weight: 600;
 }
 
+.songs-feedback-slot .status {
+  margin-top: 0;
+}
+
 .status.success {
   color: var(--success);
 }
 
 .status.error {
   color: var(--error);
+}
+
+.status.is-idle {
+  visibility: hidden;
 }
 
 .song-list {
@@ -1291,6 +1299,11 @@ pre {
   );
   color: var(--foreground);
   font: inherit;
+}
+
+.songs-impersonation-select option {
+  color: #12161d;
+  background: #f4efe6;
 }
 
 .songs-impersonation-copy {
@@ -1421,6 +1434,12 @@ pre {
   gap: 0.9rem;
   margin-top: 1rem;
   padding: 0.35rem 0 0;
+}
+
+.songs-feedback-slot {
+  min-height: 1.35rem;
+  display: flex;
+  align-items: flex-start;
 }
 
 .songs-suggestion-form input,

@@ -313,11 +313,22 @@ export function SongsBoard() {
   const canSeePrivateMembers = Boolean(actualMember?.is_admin) && !isImpersonating;
   const visibleVotingMembers = useMemo(
     () =>
-      members.filter(
-        (member) =>
-          member.can_vote &&
-          canViewerSeeMemberAvatar(member, currentMember?.id ?? null, canSeePrivateMembers),
-      ),
+      [...members]
+        .filter(
+          (member) =>
+            member.can_vote &&
+            canViewerSeeMemberAvatar(member, currentMember?.id ?? null, canSeePrivateMembers),
+        )
+        .sort((left, right) => {
+          const leftPriority = left.avatar_theme === "investor" ? 0 : 1;
+          const rightPriority = right.avatar_theme === "investor" ? 0 : 1;
+
+          if (leftPriority !== rightPriority) {
+            return leftPriority - rightPriority;
+          }
+
+          return left.display_name.localeCompare(right.display_name);
+        }),
     [canSeePrivateMembers, currentMember?.id, members],
   );
   const countedVotingMemberIds = useMemo(
@@ -1606,8 +1617,15 @@ export function SongsBoard() {
           </button>
         </form>
 
-        {statusMessage ? <p className="status success">{statusMessage}</p> : null}
-        {errorMessage ? <p className="status error">{errorMessage}</p> : null}
+        <div className="songs-feedback-slot" aria-live="polite" aria-atomic="true">
+          <p
+            className={`status ${
+              errorMessage ? "error" : statusMessage ? "success" : "is-idle"
+            }`}
+          >
+            {errorMessage ?? statusMessage ?? "Ready."}
+          </p>
+        </div>
       </div>
 
       <article className="panel section">
