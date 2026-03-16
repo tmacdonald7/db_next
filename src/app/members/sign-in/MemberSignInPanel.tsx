@@ -22,6 +22,10 @@ type LookupResponse = {
 
 export function MemberSignInPanel() {
   const router = useRouter();
+  const callbackUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/members/callback`
+      : undefined;
   const [supabase, setSupabase] = useState<ReturnType<
     typeof createSupabaseBrowserClient
   > | null>(null);
@@ -108,7 +112,7 @@ export function MemberSignInPanel() {
       const { error } = await client.auth.signInWithOtp({
         email: normalizedEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/songs`,
+          emailRedirectTo: callbackUrl,
         },
       });
 
@@ -138,7 +142,7 @@ export function MemberSignInPanel() {
       const { error } = await client.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/songs`,
+          redirectTo: callbackUrl,
         },
       });
 
