@@ -1686,11 +1686,17 @@ pre {
 }
 
 .song-avatar-button:disabled {
-  cursor: wait;
+  cursor: default;
 }
 
-.song-avatar-button:not(:disabled):hover {
-  transform: translateY(-1px);
+.song-avatar-button,
+.song-avatar-button * {
+  cursor: pointer;
+}
+
+.song-avatar-button:disabled,
+.song-avatar-button:disabled * {
+  cursor: default;
 }
 
 .song-avatar-button:not(:disabled):focus-visible {
@@ -1784,13 +1790,13 @@ pre {
   opacity: 0;
   pointer-events: none;
   white-space: nowrap;
-  padding: 0.28rem 0.52rem;
+  padding: 0.42rem 0.78rem;
   border-radius: 999px;
   background: rgba(16, 20, 28, 0.96);
   color: var(--foreground);
   font-family: var(--font-display-secondary);
-  font-size: 0.58rem;
-  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   box-shadow:
     0 14px 24px rgba(0, 0, 0, 0.28),

@@ -607,12 +607,17 @@ export function SongsBoard() {
   }
 
   async function stabilizeSongRowViewport(songId: string, operation: () => Promise<void>) {
+    if (typeof window === "undefined" || window.innerWidth > 760) {
+      await operation();
+      return;
+    }
+
     const row = songRowRefs.current.get(songId);
     const beforeTop = row?.getBoundingClientRect().top ?? null;
 
     await operation();
 
-    if (beforeTop === null || typeof window === "undefined") {
+    if (beforeTop === null) {
       return;
     }
 
