@@ -62,8 +62,12 @@ create table if not exists public.band_members (
   email text unique,
   phone text unique,
   avatar_url text,
+  avatar_label text,
+  avatar_theme text not null default 'default' check (avatar_theme in ('default', 'investor')),
   is_admin boolean not null default false,
   can_vote boolean not null default true,
+  counts_toward_votes boolean not null default true,
+  is_hidden_from_band boolean not null default false,
   constraint band_members_contact_required check (email is not null or phone is not null)
 );
 
@@ -250,12 +254,25 @@ create policy "Allow members to remove their suggestion votes"
     and public.current_band_member_can_vote()
   );
 
-insert into public.band_members (display_name, instrument, email, phone, avatar_url, is_admin, can_vote)
+insert into public.band_members (
+  display_name,
+  instrument,
+  email,
+  phone,
+  avatar_url,
+  avatar_label,
+  avatar_theme,
+  is_admin,
+  can_vote,
+  counts_toward_votes,
+  is_hidden_from_band
+)
 values
-  ('Thomas', 'Guitar', 'tmacdonald7@gmail.com', '+19362831476', null, true, true),
-  ('Dean', 'Drums', 'dbouch9077@yahoo.com', '+19366489384', null, false, true),
-  ('Gunnar', 'Bass', null, '+17139335903', null, false, true),
-  ('Anthony', 'Frontman', 'anthonyberdecio@gmail.com', '+12103632606', null, false, true),
-  ('Stephen', 'Support', 'sgmacdonald1987@gmail.com', null, null, false, false),
-  ('Daniel', 'Support', 'daniel@danielbatal.com', null, null, false, false)
+  ('Thomas', 'Guitar', 'tmacdonald7@gmail.com', '+19362831476', null, null, 'default', true, true, true, false),
+  ('Dean', 'Drums', 'dbouch9077@yahoo.com', '+19366489384', null, null, 'default', false, true, true, false),
+  ('Gunnar', 'Bass', null, '+17139335903', null, null, 'default', false, true, true, false),
+  ('Anthony', 'Frontman', 'anthonyberdecio@gmail.com', '+12103632606', null, null, 'default', false, true, true, false),
+  ('Stephen', 'Support', 'sgmacdonald1987@gmail.com', null, null, null, 'default', false, false, false, false),
+  ('Daniel', 'Support', 'daniel@danielbatal.com', null, null, 'DB', 'investor', false, true, false, true),
+  ('Giorgio', 'Support', 'giorgio.villani@spindletop.digital', null, null, null, 'default', false, false, false, false)
 on conflict do nothing;

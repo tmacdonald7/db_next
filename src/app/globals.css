@@ -467,6 +467,18 @@ pre {
   object-fit: cover;
 }
 
+.member-nav-avatar-investor {
+  border-color: rgba(186, 45, 45, 0.82);
+  background: linear-gradient(
+    180deg,
+    rgba(186, 45, 45, 0.34) 0%,
+    rgba(44, 15, 15, 0.96) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 234, 234, 0.08),
+    0 0 0 1px rgba(186, 45, 45, 0.18);
+}
+
 .member-nav-copy {
   display: grid;
   gap: 0.08rem;
@@ -1241,6 +1253,53 @@ pre {
   color: var(--foreground-muted);
 }
 
+.songs-admin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.songs-impersonation-panel {
+  display: grid;
+  gap: 0.45rem;
+  min-width: min(100%, 26rem);
+}
+
+.songs-impersonation-field {
+  display: grid;
+  gap: 0.38rem;
+  color: var(--secondary-soft);
+}
+
+.songs-impersonation-field span {
+  font-family: var(--font-display-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.songs-impersonation-select {
+  border: 1px solid rgba(212, 163, 115, 0.22);
+  border-radius: 0.88rem;
+  padding: 0.78rem 0.9rem;
+  background: linear-gradient(
+    180deg,
+    rgba(29, 36, 48, 0.92) 0%,
+    rgba(18, 22, 29, 0.98) 100%
+  );
+  color: var(--foreground);
+  font: inherit;
+}
+
+.songs-impersonation-copy {
+  margin: 0;
+  color: var(--foreground-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .songs-login-form {
   display: grid;
   gap: 0.9rem;
@@ -1593,6 +1652,18 @@ pre {
   font-size: 0.62rem;
   font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(244, 239, 230, 0.04);
+}
+
+.song-avatar-investor {
+  border-color: rgba(186, 45, 45, 0.82);
+  background: linear-gradient(
+    180deg,
+    rgba(186, 45, 45, 0.28) 0%,
+    rgba(44, 15, 15, 0.98) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 234, 234, 0.08),
+    0 0 0 1px rgba(186, 45, 45, 0.18);
 }
 
 .song-avatar-dont_know {

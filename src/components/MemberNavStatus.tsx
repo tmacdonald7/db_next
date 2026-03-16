@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { getMemberAvatarLabel } from "@/lib/member-display";
 
 type SessionUser = {
   email?: string | null;
@@ -15,20 +16,14 @@ type SessionUser = {
 };
 
 type BandMember = {
+  id: string;
   display_name: string;
   email: string | null;
   avatar_url: string | null;
+  avatar_label: string | null;
+  avatar_theme: "default" | "investor";
   is_admin: boolean;
 };
-
-function getInitials(value: string) {
-  return value
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 export function MemberNavStatus() {
   const [supabase, setSupabase] = useState<ReturnType<
@@ -123,7 +118,7 @@ export function MemberNavStatus() {
 
     supabase
       .from("band_members")
-      .select("display_name, email, avatar_url, is_admin")
+      .select("id, display_name, email, avatar_url, avatar_label, avatar_theme, is_admin")
       .eq("email", sessionUser.email.toLowerCase())
       .maybeSingle()
       .then(({ data, error }) => {
@@ -155,6 +150,7 @@ export function MemberNavStatus() {
 
   const avatarImage = bandMember?.avatar_url ?? sessionUser?.userMetadata?.avatar_url ?? null;
   const badgeText = bandMember?.is_admin ? "Admin" : sessionUser ? "Signed In" : null;
+  const avatarLabel = bandMember ? getMemberAvatarLabel(bandMember) : label.slice(0, 2).toUpperCase();
 
   if (!sessionUser) {
     return (
@@ -167,11 +163,13 @@ export function MemberNavStatus() {
   return (
     <div className="member-nav-shell">
       <Link href="/songs" className="member-nav-badge" aria-label="Open member songs board">
-        <span className="member-nav-avatar">
+        <span
+          className={`member-nav-avatar${bandMember?.avatar_theme === "investor" ? " member-nav-avatar-investor" : ""}`}
+        >
           {avatarImage ? (
             <img src={avatarImage} alt={label} />
           ) : (
-            <span>{getInitials(label)}</span>
+            <span>{avatarLabel}</span>
           )}
         </span>
         <span className="member-nav-copy">

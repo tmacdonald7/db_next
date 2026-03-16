@@ -13,6 +13,10 @@ import {
   type SongConfidence,
   type SongStage,
 } from "@/lib/songs";
+import {
+  canViewerSeeMemberAvatar,
+  getMemberAvatarLabel,
+} from "@/lib/member-display";
 
 type SessionUser = {
   email?: string | null;
@@ -26,8 +30,12 @@ type BandMember = {
   email: string | null;
   phone: string | null;
   avatar_url: string | null;
+  avatar_label: string | null;
+  avatar_theme: "default" | "investor";
   is_admin: boolean;
   can_vote: boolean;
+  counts_toward_votes: boolean;
+  is_hidden_from_band: boolean;
 };
 
 type SongRecord = {
@@ -88,15 +96,6 @@ function matchesCurrentMember(member: BandMember, user: SessionUser | null) {
     (userEmail && memberEmail && userEmail === memberEmail) ||
     (user.phone && member.phone && user.phone === member.phone)
   );
-}
-
-function getMemberInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 function getSongBucket(song: SongRecord): SongBucket {
@@ -175,10 +174,14 @@ export function SongsBoard() {
   const [dragBucket, setDragBucket] = useState<SongBucket | null>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [impersonatedMemberId, setImpersonatedMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     setHasPublicConfig(hasSupabasePublicConfig());
     setSupabase(createSupabaseBrowserClient());
+    if (typeof window !== "undefined") {
+      setImpersonatedMemberId(window.localStorage.getItem("songs-board-impersonation-member-id"));
+    }
   }, []);
 
   useEffect(() => {
@@ -237,7 +240,9 @@ export function SongsBoard() {
       const [membersResult, songsResult, statusesResult, votesResult] = await Promise.all([
         client
           .from("band_members")
-          .select("id, display_name, instrument, email, phone, avatar_url, is_admin, can_vote")
+          .select(
+            "id, display_name, instrument, email, phone, avatar_url, avatar_label, avatar_theme, is_admin, can_vote, counts_toward_votes, is_hidden_from_band",
+          )
           .order("created_at", { ascending: true }),
         client
           .from("songs")
@@ -290,12 +295,58 @@ export function SongsBoard() {
     void loadBoard();
   }, [sessionUser, supabase]);
 
-  const currentMember = useMemo(
+  const actualMember = useMemo(
     () => members.find((member) => matchesCurrentMember(member, sessionUser)) ?? null,
     [members, sessionUser],
   );
-  const votingMembers = useMemo(() => members.filter((member) => member.can_vote), [members]);
-  const votingMemberCount = votingMembers.length;
+  const currentMember = useMemo(() => {
+    if (!impersonatedMemberId) {
+      return actualMember;
+    }
+
+    return members.find((member) => member.id === impersonatedMemberId) ?? actualMember;
+  }, [actualMember, impersonatedMemberId, members]);
+  const isImpersonating =
+    Boolean(impersonatedMemberId) &&
+    Boolean(actualMember) &&
+    currentMember?.id !== actualMember?.id;
+  const canSeePrivateMembers = Boolean(actualMember?.is_admin) && !isImpersonating;
+  const visibleVotingMembers = useMemo(
+    () =>
+      members.filter(
+        (member) =>
+          member.can_vote &&
+          canViewerSeeMemberAvatar(member, currentMember?.id ?? null, canSeePrivateMembers),
+      ),
+    [canSeePrivateMembers, currentMember?.id, members],
+  );
+  const countedVotingMemberIds = useMemo(
+    () =>
+      new Set(
+        members
+          .filter((member) => member.can_vote && member.counts_toward_votes)
+          .map((member) => member.id),
+      ),
+    [members],
+  );
+  const countedVotingMemberCount = countedVotingMemberIds.size;
+
+  useEffect(() => {
+    if (!actualMember?.is_admin) {
+      setImpersonatedMemberId(null);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("songs-board-impersonation-member-id");
+      }
+      return;
+    }
+
+    if (impersonatedMemberId && !members.some((member) => member.id === impersonatedMemberId)) {
+      setImpersonatedMemberId(null);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("songs-board-impersonation-member-id");
+      }
+    }
+  }, [actualMember?.is_admin, impersonatedMemberId, members]);
 
   const songStatusMap = useMemo(() => {
     const map = new Map<string, Map<string, SongConfidence>>();
@@ -309,15 +360,33 @@ export function SongsBoard() {
     return map;
   }, [statuses]);
 
-  const suggestionVoteCountMap = useMemo(() => {
+  const visibleSuggestionVoteCountMap = useMemo(() => {
     const map = new Map<string, number>();
+    const visibleMemberIds = new Set(visibleVotingMembers.map((member) => member.id));
 
     for (const vote of suggestionVotes) {
+      if (!visibleMemberIds.has(vote.member_id)) {
+        continue;
+      }
+
       map.set(vote.song_id, (map.get(vote.song_id) ?? 0) + 1);
     }
 
     return map;
-  }, [suggestionVotes]);
+  }, [suggestionVotes, visibleVotingMembers]);
+  const countedSuggestionVoteCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+
+    for (const vote of suggestionVotes) {
+      if (!countedVotingMemberIds.has(vote.member_id)) {
+        continue;
+      }
+
+      map.set(vote.song_id, (map.get(vote.song_id) ?? 0) + 1);
+    }
+
+    return map;
+  }, [countedVotingMemberIds, suggestionVotes]);
 
   const currentMemberVoteSet = useMemo(() => {
     if (!currentMember) {
@@ -500,7 +569,7 @@ export function SongsBoard() {
         ? suggestedSongs
             .map(
               (song) =>
-                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span>${suggestionVoteCountMap.get(song.id) ? ` <span class="artist">(${suggestionVoteCountMap.get(song.id)} votes)</span>` : ""}</li>`,
+                `<li><strong>${escapeHtml(song.title)}</strong> <span class="artist">${escapeHtml(song.artist)}</span>${visibleSuggestionVoteCountMap.get(song.id) ? ` <span class="artist">(${visibleSuggestionVoteCountMap.get(song.id)} votes)</span>` : ""}</li>`,
             )
             .join("")
         : "<li>No suggested songs right now.</li>";
@@ -509,6 +578,48 @@ export function SongsBoard() {
       "Suggested Songs",
       `<section class="export-section"><h2>Suggested Songs</h2><ul>${items}</ul></section>`,
     );
+  }
+
+  async function runImpersonatedAction(
+    payload:
+      | { action: "toggle_vote"; songId: string }
+      | { action: "update_confidence"; songId: string; confidence: SongConfidence }
+      | { action: "suggest_song"; title: string; artist: string },
+  ) {
+    if (!supabase || !actualMember?.is_admin || !currentMember) {
+      throw new Error("Admin impersonation is not available right now.");
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const accessToken = session?.access_token;
+
+    if (!accessToken) {
+      throw new Error("Missing member session. Please sign in again.");
+    }
+
+    const response = await fetch("/api/member-impersonation", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        ...payload,
+        memberId: currentMember.id,
+      }),
+    });
+
+    const result = (await response.json()) as { error?: string; statusMessage?: string };
+
+    if (!response.ok) {
+      throw new Error(result.error ?? "Unable to complete the impersonated action.");
+    }
+
+    await loadBoard();
+    setStatusMessage(result.statusMessage ?? `Updated as ${currentMember.display_name}.`);
   }
 
   async function toggleSuggestionVote(song: SongRecord) {
@@ -524,11 +635,12 @@ export function SongsBoard() {
 
     const client = supabase;
     const songId = song.id;
-    const explicitVoteCount = suggestionVoteCountMap.get(songId) ?? 0;
+    const explicitVoteCount = countedSuggestionVoteCountMap.get(songId) ?? 0;
     const implicitActiveApproval =
+      currentMember.counts_toward_votes &&
       (song.status === "active" || song.status === "selected") &&
-      explicitVoteCount < votingMemberCount &&
-      votingMemberCount > 0;
+      explicitVoteCount < countedVotingMemberCount &&
+      countedVotingMemberCount > 0;
     const hasVoted = implicitActiveApproval || currentMemberVoteSet.has(songId);
 
     setBusyKey(`vote:${songId}`);
@@ -536,6 +648,14 @@ export function SongsBoard() {
     setStatusMessage(null);
 
     try {
+      if (isImpersonating) {
+        await runImpersonatedAction({
+          action: "toggle_vote",
+          songId,
+        });
+        return;
+      }
+
       if (hasVoted) {
         const { error } = await client
           .from("song_suggestion_votes")
@@ -558,10 +678,13 @@ export function SongsBoard() {
 
           nextVotes = [
             ...nextVotes,
-            ...votingMembers
+            ...members
               .filter(
                 (member) =>
-                  member.id !== currentMember.id && !existingMemberIds.has(member.id),
+                  member.can_vote &&
+                  member.counts_toward_votes &&
+                  member.id !== currentMember.id &&
+                  !existingMemberIds.has(member.id),
               )
               .map((member) => ({
                 song_id: songId,
@@ -570,8 +693,10 @@ export function SongsBoard() {
           ];
         }
 
-        const nextVoteCount = nextVotes.filter((vote) => vote.song_id === songId).length;
-        const approvedMemberCount = votingMemberCount;
+        const nextVoteCount = nextVotes.filter(
+          (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
+        ).length;
+        const approvedMemberCount = countedVotingMemberCount;
 
         if (
           (song.status === "active" || song.status === "selected") &&
@@ -622,8 +747,10 @@ export function SongsBoard() {
         }
 
         const nextVotes = [...suggestionVotes, data];
-        const nextVoteCount = nextVotes.filter((vote) => vote.song_id === songId).length;
-        const approvedMemberCount = votingMemberCount;
+        const nextVoteCount = nextVotes.filter(
+          (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
+        ).length;
+        const approvedMemberCount = countedVotingMemberCount;
 
         if (approvedMemberCount > 0 && nextVoteCount >= approvedMemberCount) {
           const nextNotes = withSongSetNumber(song, defaultActiveSetNumber);
@@ -677,6 +804,15 @@ export function SongsBoard() {
     setStatusMessage(null);
 
     try {
+      if (isImpersonating) {
+        await runImpersonatedAction({
+          action: "update_confidence",
+          songId,
+          confidence,
+        });
+        return;
+      }
+
       const { error } = await client.from("song_member_statuses").upsert(
         {
           song_id: songId,
@@ -733,6 +869,17 @@ export function SongsBoard() {
     setStatusMessage(null);
 
     try {
+      if (isImpersonating) {
+        await runImpersonatedAction({
+          action: "suggest_song",
+          title,
+          artist,
+        });
+        setSuggestionTitle("");
+        setSuggestionArtist("");
+        return;
+      }
+
       const slug = getSongSlug(title, artist);
       const { data, error } = await client
         .from("songs")
@@ -1073,12 +1220,16 @@ export function SongsBoard() {
       dropIndicator?.songId === song.id && dropIndicator.bucket === songBucket
         ? dropIndicator.position
         : null;
-    const explicitVoteCount = suggestionVoteCountMap.get(song.id) ?? 0;
+    const explicitVoteCount = countedSuggestionVoteCountMap.get(song.id) ?? 0;
+    const visibleVoteCount = visibleSuggestionVoteCountMap.get(song.id) ?? 0;
     const implicitActiveApproval =
+      currentMember?.counts_toward_votes &&
       (song.status === "active" || song.status === "selected") &&
-      explicitVoteCount < votingMemberCount &&
-      votingMemberCount > 0;
-    const voteCount = implicitActiveApproval ? votingMemberCount : explicitVoteCount;
+      explicitVoteCount < countedVotingMemberCount &&
+      countedVotingMemberCount > 0;
+    const voteCount = implicitActiveApproval
+      ? Math.max(visibleVoteCount, explicitVoteCount)
+      : visibleVoteCount;
     const currentMemberHasVoted = implicitActiveApproval
       ? true
       : currentMemberVoteSet.has(song.id);
@@ -1206,19 +1357,19 @@ export function SongsBoard() {
           ) : null}
 
           <div className="song-board-avatars">
-            {votingMembers.map((member) => {
+            {visibleVotingMembers.map((member) => {
               const confidence = confidenceMap.get(member.id) ?? "dont_know";
 
               return (
                 <div
                   key={member.id}
-                  className={`song-avatar song-avatar-${confidence}${currentMember?.id === member.id ? " is-current" : ""}`}
+                  className={`song-avatar song-avatar-${confidence}${currentMember?.id === member.id ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`}
                   title={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
                 >
                   {member.avatar_url ? (
                     <img src={member.avatar_url} alt={member.display_name} />
                   ) : (
-                    <span>{getMemberInitials(member.display_name)}</span>
+                    <span>{getMemberAvatarLabel(member)}</span>
                   )}
                 </div>
               );
@@ -1371,8 +1522,54 @@ export function SongsBoard() {
   return (
     <section className="section">
       <div className="songs-controls-panel">
-        {currentMember?.is_admin ? (
-          <div className="song-board-actions">
+        {actualMember?.is_admin ? (
+          <div className="songs-admin-tools">
+            <div className="songs-impersonation-panel">
+              <label className="songs-impersonation-field">
+                <span>Testing View</span>
+                <select
+                  className="songs-impersonation-select"
+                  value={isImpersonating ? currentMember?.id ?? "" : ""}
+                  onChange={(event) => {
+                    const nextMemberId = event.target.value || null;
+                    setImpersonatedMemberId(nextMemberId);
+                    if (typeof window !== "undefined") {
+                      if (nextMemberId) {
+                        window.localStorage.setItem(
+                          "songs-board-impersonation-member-id",
+                          nextMemberId,
+                        );
+                      } else {
+                        window.localStorage.removeItem(
+                          "songs-board-impersonation-member-id",
+                        );
+                      }
+                    }
+                    setStatusMessage(null);
+                    setErrorMessage(null);
+                  }}
+                >
+                  <option value="">My admin view</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.display_name} | {member.instrument}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {isImpersonating && currentMember ? (
+                <p className="songs-impersonation-copy">
+                  Testing as {currentMember.display_name}. Member actions run through an
+                  admin-only proxy so you can vote, suggest songs, and update readiness
+                  without leaving your account.
+                </p>
+              ) : (
+                <p className="songs-impersonation-copy">
+                  Switch into any member account to test their exact board experience.
+                </p>
+              )}
+            </div>
+            <div className="song-board-actions">
             {songs.length === 0 ? (
               <button
                 type="button"
@@ -1383,6 +1580,7 @@ export function SongsBoard() {
                 {busyKey === "import:default" ? "Importing..." : "Import Current Set"}
               </button>
             ) : null}
+            </div>
           </div>
         ) : null}
 

@@ -52,10 +52,11 @@ STRAPI_TOKEN=...
 ## Supabase Setup
 
 1. Create a Supabase project.
-2. Run [`supabase_schema.sql`](./supabase_schema.sql) in SQL editor.
-3. Confirm `booking_inquiries`, `contact_inquiries`, `band_members`, `songs`, `song_member_statuses`, and `song_suggestion_votes` exist.
-4. Confirm RLS policies allow anonymous contact/booking inserts and authenticated approved band-member access to the internal songs board.
-5. Add approved band members to `band_members`, for example:
+2. For a fresh database, run [`supabase_schema.sql`](./supabase_schema.sql) in SQL editor.
+3. For an existing live database that already has `band_members`, run [`supabase_member_updates.sql`](./supabase_member_updates.sql) after the base schema to add newer member-profile fields and backfill support/test accounts.
+4. Confirm `booking_inquiries`, `contact_inquiries`, `band_members`, `songs`, `song_member_statuses`, and `song_suggestion_votes` exist.
+5. Confirm RLS policies allow anonymous contact/booking inserts and authenticated approved band-member access to the internal songs board.
+6. Add approved band members to `band_members`, for example:
 
 ```sql
 insert into public.band_members (display_name, instrument, email, phone, avatar_url, is_admin)
@@ -66,10 +67,10 @@ values
   ('Anthony', 'Frontman', null, '+12103632606', null, false);
 ```
 
-6. In Supabase Auth, enable email OTP / magic links, phone auth, and configure your SMS provider if you want phone-based member login.
-7. If you want Google sign-in, configure Google OAuth in Supabase Auth and make sure the Google account email also exists in `band_members`.
-8. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` locally and in Netlify.
-9. Visit `/members/sign-in` to test member access, then sign in as an admin band member and use the import button on `/songs` to seed the current repertoire into the `songs` table.
+7. In Supabase Auth, enable email OTP / magic links, phone auth, and configure your SMS provider if you want phone-based member login.
+8. If you want Google sign-in, configure Google OAuth in Supabase Auth and make sure the Google account email also exists in `band_members`.
+9. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` locally and in Netlify.
+10. Visit `/members/sign-in` to test member access, then sign in as an admin band member and use the import button on `/songs` to seed the current repertoire into the `songs` table.
 
 ## Blog Data Abstraction
 
