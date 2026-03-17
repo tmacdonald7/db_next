@@ -1377,6 +1377,9 @@ export function SongsBoard() {
     const isCurrentMemberReady = binaryCurrentConfidence === "know_it";
     const songBucket = getSongBucket(song);
     const showSortHandle = canSortSetList && isSetListSortMode && songBucket === "active";
+    const showInlineAdminActions = Boolean(
+      currentMember?.is_admin && (song.status === "suggested" || song.status === "archived"),
+    );
     const isDragSource = dragSongId === song.id && dragBucket === songBucket;
     const rowDropPosition =
       dropIndicator?.songId === song.id && dropIndicator.bucket === songBucket
@@ -1418,7 +1421,7 @@ export function SongsBoard() {
             songRowRefs.current.delete(song.id);
           }
         }}
-        className={`song-board-row${currentMember?.is_admin ? " has-actions" : ""}${typeof index === "number" ? " has-row-number" : ""}${showSortHandle ? " is-draggable is-sort-mode" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
+        className={`song-board-row${showInlineAdminActions ? " has-actions" : ""}${typeof index === "number" ? " has-row-number" : ""}${showSortHandle ? " is-draggable is-sort-mode" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
         onDragOver={(event) => {
           if (showSortHandle && dragBucket === songBucket) {
             event.preventDefault();
@@ -1607,16 +1610,19 @@ export function SongsBoard() {
           )}
         </div>
 
-        {currentMember?.is_admin ? (
+        {currentMember?.is_admin && !showSortHandle ? (
+          <button
+            type="button"
+            className="song-row-edit-action archive-action"
+            disabled={busyKey === `edit:${song.id}`}
+            onClick={() => void editSong(song)}
+          >
+            Edit
+          </button>
+        ) : null}
+
+        {showInlineAdminActions ? (
           <div className="song-board-actions">
-            <button
-              type="button"
-              className="vote-chip archive-action"
-              disabled={busyKey === `edit:${song.id}`}
-              onClick={() => void editSong(song)}
-            >
-              Edit
-            </button>
             {song.status === "archived" ? (
               <button
                 type="button"
@@ -1864,7 +1870,7 @@ export function SongsBoard() {
                 </div>
                 {setGroup.songs.length > 0 ? (
                   <>
-                    {renderSongsBoardHeaders(Boolean(currentMember?.is_admin))}
+                    {renderSongsBoardHeaders(false)}
                     <ol className="songs-board-list songs-board-list-numbered">
                       {setGroup.songs.map((song, index) =>
                         renderSongRow(song, {
