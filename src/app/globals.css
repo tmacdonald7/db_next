@@ -1834,12 +1834,20 @@ pre {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   transition:
     background 180ms ease,
     color 180ms ease,
     border-color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
+}
+
+.song-readiness-toggle-line {
+  display: block;
 }
 
 .song-readiness-toggle:not(:disabled) {
@@ -1935,6 +1943,32 @@ pre {
   color: var(--secondary-soft);
   min-width: 3.8rem;
   justify-content: center;
+}
+
+.vote-chip-vote-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.16rem;
+  text-align: center;
+}
+
+.vote-chip-vote-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.vote-chip-vote-line {
+  display: block;
+}
+
+.vote-chip-vote-count {
+  display: block;
+  min-width: 1ch;
+  text-align: center;
 }
 
 .vote-chip-vote:not(:disabled),
@@ -2344,8 +2378,9 @@ pre {
     grid-template-areas:
       "main readiness vote"
       "status readiness vote";
-    gap: 0.5rem;
-    padding: 0.5rem 0;
+    column-gap: 0;
+    row-gap: 0;
+    padding: 0;
     align-items: stretch;
   }
 
@@ -2360,6 +2395,7 @@ pre {
     grid-area: main;
     gap: 0.42rem;
     align-items: flex-start;
+    padding: 0.5rem 0.55rem 0.2rem 0;
   }
 
   .song-row-number {
@@ -2419,6 +2455,7 @@ pre {
     align-self: center;
     gap: 0.35rem;
     flex-wrap: nowrap;
+    padding: 0.2rem 0.55rem 0.5rem 0;
   }
 
   .song-board-status-label {
@@ -2452,6 +2489,7 @@ pre {
     line-height: 1.05;
     white-space: normal;
     word-break: break-word;
+    border-radius: 0;
   }
 
   .song-board-avatars {
@@ -2482,6 +2520,7 @@ pre {
     width: 100%;
     min-width: 4.35rem;
     min-height: 3.65rem;
+    border-radius: 0;
   }
 
   .vote-chip-icon {
@@ -2495,6 +2534,21 @@ pre {
 
   .vote-chip-icon span {
     font-size: 0.98rem;
+  }
+
+  .vote-chip-vote-text {
+    gap: 0.22rem;
+  }
+
+  .vote-chip-vote-copy {
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+    line-height: 1.02;
+  }
+
+  .vote-chip-vote-count {
+    font-size: 0.98rem;
+    line-height: 1;
   }
 
   .song-list li {

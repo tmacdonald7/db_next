@@ -123,7 +123,17 @@ function getBinaryConfidence(confidence: SongConfidence): SongConfidence {
 }
 
 function getBinaryReadinessLabel(confidence: SongConfidence) {
-  return getBinaryConfidence(confidence) === "know_it" ? "Ready" : "Not Ready";
+  return getBinaryConfidence(confidence) === "know_it" ? "Gig Ready" : "Ready to Gig?";
+}
+
+function getBinaryReadinessButtonLabel(confidence: SongConfidence) {
+  return getBinaryConfidence(confidence) === "know_it"
+    ? ["Gig", "Ready"]
+    : ["Ready", "to", "Gig?"];
+}
+
+function getVoteButtonLines(hasVoted: boolean) {
+  return hasVoted ? ["Vote To", "Gig"] : ["Vote To", "Gig"];
 }
 
 function renderSongsBoardLegend() {
@@ -1390,6 +1400,16 @@ export function SongsBoard() {
         : implicitActiveApproval
           ? countedVotingMemberCount
           : visibleVoteCount;
+    const voteProgressCount =
+      song.status === "active" || song.status === "selected"
+        ? countedVotingMemberCount
+        : implicitActiveApproval
+          ? countedVotingMemberCount
+          : explicitVoteCount;
+    const voteProgressLabel =
+      countedVotingMemberCount > 0
+        ? `${voteProgressCount}/${countedVotingMemberCount}`
+        : `${voteProgressCount}/0`;
     const currentMemberHasVoted = implicitActiveApproval
       ? true
       : currentMemberVoteSet.has(song.id);
@@ -1499,29 +1519,32 @@ export function SongsBoard() {
           currentMember ? (
             <button
               type="button"
-              className={`vote-chip vote-chip-vote vote-chip-icon${currentMemberHasVoted ? " is-active" : ""}`}
+              className={`vote-chip vote-chip-vote vote-chip-vote-text${currentMemberHasVoted ? " is-active" : ""}`}
               disabled={busyKey === `vote:${song.id}` || !currentMember.can_vote}
               onClick={() => void toggleSuggestionVote(song)}
               title={
                 !currentMember.can_vote
-                  ? `${voteCount} total votes`
+                  ? `${voteProgressLabel} voting members`
                   : currentMemberHasVoted
-                    ? `Remove vote (${voteCount} total)`
-                    : `Vote in (${voteCount} total)`
+                    ? `Remove vote (${voteProgressLabel})`
+                    : `Vote in (${voteProgressLabel})`
               }
               aria-label={
                 !currentMember.can_vote
-                  ? `${voteCount} total votes. Voting is disabled for this member.`
+                  ? `${voteProgressLabel} voting members. Voting is disabled for this member.`
                   : currentMemberHasVoted
-                    ? `Remove vote. ${voteCount} total votes.`
-                    : `Vote in. ${voteCount} total votes.`
+                    ? `Remove vote. ${voteProgressLabel} voting members.`
+                    : `Vote in. ${voteProgressLabel} voting members.`
               }
             >
-              <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                <path d="M8.6 2.5a1 1 0 0 1 .95 1.31l-1.13 3.38h5.2c1.44 0 2.43 1.42 1.95 2.77l-2.04 5.74A2 2 0 0 1 11.65 17H5.5a2 2 0 0 1-2-2V8.86a2 2 0 0 1 .59-1.42l2.74-2.75A2 2 0 0 0 7.3 3.8l.35-1.05a1 1 0 0 1 .95-.25Z" />
-                <path d="M3 8.25h1.5V17H3.75A.75.75 0 0 1 3 16.25v-8Z" />
-              </svg>
-              <span>{voteCount}</span>
+              <span className="vote-chip-vote-copy">
+                {getVoteButtonLines(currentMemberHasVoted).map((line) => (
+                  <span key={line} className="vote-chip-vote-line">
+                    {line}
+                  </span>
+                ))}
+              </span>
+              <span className="vote-chip-vote-count">{voteProgressLabel}</span>
             </button>
           ) : null}
         </div>
@@ -1535,11 +1558,15 @@ export function SongsBoard() {
                 aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
                 onClick={() => void toggleReadiness(song, currentConfidence)}
                 disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
-              >
-                {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
-                  ? "Saving..."
-                  : getBinaryReadinessLabel(currentConfidence)}
-              </button>
+                >
+                  {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
+                    ? "Saving..."
+                    : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
+                        <span key={line} className="song-readiness-toggle-line">
+                          {line}
+                        </span>
+                      ))}
+                </button>
               <span className={`song-avatar-toast${isMobileToastVisible}`}>
                 {mobileReadinessToast?.message}
               </span>
