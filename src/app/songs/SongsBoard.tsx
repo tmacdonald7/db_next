@@ -835,45 +835,8 @@ export function SongsBoard() {
             ];
           }
 
-          const nextVoteCount = nextVotes.filter(
-            (vote) => vote.song_id === songId && countedVotingMemberIds.has(vote.member_id),
-          ).length;
-          const approvedMemberCount = countedVotingMemberCount;
-
-          if (
-            (song.status === "active" || song.status === "selected") &&
-            approvedMemberCount > 0 &&
-            nextVoteCount < approvedMemberCount
-          ) {
-            const { error: stageError } = await client
-              .from("songs")
-              .update({
-                status: "suggested",
-                sort_order: suggestedSongs.length,
-              })
-              .eq("id", songId);
-
-            if (stageError) {
-              throw stageError;
-            }
-
-            setSuggestionVotes(nextVotes);
-            setSongs((current) =>
-              current.map((entry) =>
-                entry.id === songId
-                  ? {
-                      ...entry,
-                      status: "suggested",
-                      sort_order: suggestedSongs.length,
-                    }
-                  : entry,
-              ),
-            );
-            setStatusMessage("Song moved back to suggested songs.");
-          } else {
-            setSuggestionVotes(nextVotes);
-            setStatusMessage("Vote removed.");
-          }
+          setSuggestionVotes(nextVotes);
+          setStatusMessage("Vote removed.");
         } else {
           const { data, error } = await client
             .from("song_suggestion_votes")
@@ -1379,7 +1342,11 @@ export function SongsBoard() {
     const songBucket = getSongBucket(song);
     const showSortHandle = canSortSetList && isSetListSortMode && songBucket === "active";
     const showInlineAdminActions = Boolean(
-      currentMember?.is_admin && (song.status === "suggested" || song.status === "archived"),
+      currentMember?.is_admin &&
+        (song.status === "active" ||
+          song.status === "selected" ||
+          song.status === "suggested" ||
+          song.status === "archived"),
     );
     const isDragSource = dragSongId === song.id && dragBucket === songBucket;
     const rowDropPosition =
@@ -1624,6 +1591,26 @@ export function SongsBoard() {
 
         {showInlineAdminActions ? (
           <div className="song-board-actions">
+            {song.status === "active" || song.status === "selected" ? (
+              <button
+                type="button"
+                className="vote-chip archive-action"
+                disabled={busyKey === `stage:${song.id}:suggested`}
+                onClick={() => void updateSongStage(song.id, "suggested")}
+              >
+                Move To Suggested
+              </button>
+            ) : null}
+            {song.status === "active" || song.status === "selected" ? (
+              <button
+                type="button"
+                className="vote-chip archive-action"
+                disabled={busyKey === `stage:${song.id}:archived`}
+                onClick={() => void updateSongStage(song.id, "archived")}
+              >
+                Archive
+              </button>
+            ) : null}
             {song.status === "archived" ? (
               <button
                 type="button"
@@ -1871,7 +1858,7 @@ export function SongsBoard() {
                 </div>
                 {setGroup.songs.length > 0 ? (
                   <>
-                    {renderSongsBoardHeaders(false)}
+                    {renderSongsBoardHeaders(Boolean(currentMember?.is_admin))}
                     <ol className="songs-board-list songs-board-list-numbered">
                       {setGroup.songs.map((song, index) =>
                         renderSongRow(song, {
