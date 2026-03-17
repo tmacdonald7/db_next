@@ -2426,7 +2426,7 @@ pre {
     display: grid;
     grid-template-rows: auto auto;
     align-content: stretch;
-    row-gap: 0.08rem;
+    row-gap: 0.16rem;
     padding: 0.5rem 0.5rem;
     padding-left: 0;
   }
@@ -2444,23 +2444,22 @@ pre {
   }
 
   .song-board-title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.3rem;
+    display: block;
     font-size: 0.98rem;
     line-height: 1.18;
-    white-space: normal;
+    white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
   }
 
   .song-board-title-text {
-    display: inline;
+    display: block;
   }
 
   .song-board-artist {
-    display: inline;
+    display: block;
+    margin-top: 0.1rem;
+    padding-bottom: 0.08rem;
     font-size: 0.84rem;
     line-height: 1.18;
     white-space: normal;
