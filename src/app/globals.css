@@ -2447,6 +2447,8 @@ pre {
     align-items: center;
     justify-content: center;
     padding: 0.52rem 0.62rem 0.48rem;
+    border-top-left-radius: 0.8rem;
+    border-top-right-radius: 0.8rem;
     border-top: 1px solid color-mix(in srgb, var(--active-set-accent) 100%, rgba(244, 239, 230, 0.2));
     border-bottom: none;
     background: linear-gradient(

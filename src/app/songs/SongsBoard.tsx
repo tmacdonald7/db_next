@@ -145,8 +145,9 @@ function renderSongsBoardHeaders(showActions: boolean) {
     >
       <span className="songs-board-columns-song">Song</span>
       <span className="songs-board-columns-metric">Set List?</span>
-      <span className="songs-board-columns-metric">You Gig Ready?</span>
       <span className="songs-board-columns-metric">Who&apos;s Ready</span>
+      <span className="songs-board-columns-metric">Vote To Gig?</span>
+      <span className="songs-board-columns-metric">You Gig Ready?</span>
       {showActions ? <span className="songs-board-columns-actions">Actions</span> : null}
     </div>
   );
@@ -1545,31 +1546,6 @@ export function SongsBoard() {
             </button>
           ) : (
             <>
-              <div className="song-board-readiness">
-                {currentMember?.can_vote && song.status !== "archived" ? (
-                  <div className="song-board-readiness-toggle-wrap">
-                    <button
-                      type="button"
-                      className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
-                      aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
-                      onClick={() => void toggleReadiness(song, currentConfidence)}
-                      disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
-                      >
-                        {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
-                          ? "Saving..."
-                          : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
-                              <span key={line} className="song-readiness-toggle-line">
-                                {line}
-                              </span>
-                            ))}
-                      </button>
-                    <span className={`song-avatar-toast${isMobileToastVisible}`}>
-                      {mobileReadinessToast?.message}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-
               <div className="song-board-vote">
                 {(song.status === "suggested" ||
                   song.status === "active" ||
@@ -1604,6 +1580,31 @@ export function SongsBoard() {
                     </span>
                     <span className="vote-chip-vote-count">{voteProgressLabel}</span>
                   </button>
+                ) : null}
+              </div>
+
+              <div className="song-board-readiness">
+                {currentMember?.can_vote && song.status !== "archived" ? (
+                  <div className="song-board-readiness-toggle-wrap">
+                    <button
+                      type="button"
+                      className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
+                      aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
+                      onClick={() => void toggleReadiness(song, currentConfidence)}
+                      disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
+                      >
+                        {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
+                          ? "Saving..."
+                          : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
+                              <span key={line} className="song-readiness-toggle-line">
+                                {line}
+                              </span>
+                            ))}
+                      </button>
+                    <span className={`song-avatar-toast${isMobileToastVisible}`}>
+                      {mobileReadinessToast?.message}
+                    </span>
+                  </div>
                 ) : null}
               </div>
             </>
