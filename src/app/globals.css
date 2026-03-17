@@ -1557,12 +1557,21 @@ pre {
 }
 
 .song-board-row.is-drag-source .song-board-main,
+.song-board-row.is-drag-source .song-board-action-rail,
 .song-board-row.is-drag-source .song-board-avatars,
 .song-board-row.is-drag-source .song-board-readiness,
 .song-board-row.is-drag-source .song-board-vote,
 .song-board-row.is-drag-source .song-board-status,
 .song-board-row.is-drag-source .song-board-actions {
   pointer-events: none;
+}
+
+.song-board-action-rail {
+  display: contents;
+}
+
+.song-board-content-rail {
+  display: contents;
 }
 
 .song-board-row.is-drop-target-before::before,
@@ -2373,29 +2382,59 @@ pre {
     padding-bottom: 0.45rem;
   }
 
+  .songs-board-list {
+    gap: 0;
+  }
+
   .song-board-row {
-    grid-template-columns: minmax(0, 1fr) 4rem 4rem;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "main readiness vote"
-      "status readiness vote";
-    column-gap: 0.14rem;
+      "contentrail actionrail";
+    column-gap: 0.34rem;
     row-gap: 0;
     padding: 0;
     align-items: stretch;
+    border-top: none;
+    border-bottom: none;
+  }
+
+  .song-board-row + .song-board-row {
+    background-image: linear-gradient(
+      90deg,
+      rgba(212, 163, 115, 0.06) 0%,
+      rgba(212, 163, 115, 0.12) 18%,
+      rgba(212, 163, 115, 0.12) 82%,
+      rgba(212, 163, 115, 0.06) 100%
+    );
+    background-repeat: no-repeat;
+    background-position: top left;
+    background-size: 100% 1px;
   }
 
   .song-board-row.has-actions {
-    grid-template-columns: minmax(0, 1fr) 4rem 4rem auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "main readiness vote actions"
-      "status readiness vote actions";
+      "contentrail actionrail actions";
+  }
+
+  .song-board-row:first-child {
+    border-top: none;
+  }
+
+  .song-board-content-rail {
+    grid-area: contentrail;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: stretch;
+    row-gap: 0.08rem;
+    padding: 0.5rem 0.5rem;
+    padding-left: 0;
   }
 
   .song-board-main {
-    grid-area: main;
     gap: 0.42rem;
     align-items: flex-start;
-    padding: 0.25rem 0.5rem 0.25rem 0;
+    padding: 0;
   }
 
   .song-row-number {
@@ -2429,6 +2468,15 @@ pre {
     text-overflow: clip;
   }
 
+  .song-board-action-rail {
+    grid-area: actionrail;
+    display: grid;
+    grid-template-columns: 4rem 4rem;
+    gap: 0.14rem;
+    align-self: stretch;
+    padding: 0.5rem 0;
+  }
+
   .song-board-vote,
   .song-board-readiness,
   .song-board-status {
@@ -2436,30 +2484,27 @@ pre {
   }
 
   .song-board-vote {
-    grid-area: vote;
-    justify-content: flex-end;
+    grid-area: auto;
+    justify-content: stretch;
     align-self: stretch;
     width: 100%;
-    padding-top: 0.24rem;
-    padding-bottom: 0.24rem;
+    padding: 0;
   }
 
   .song-board-readiness {
-    grid-area: readiness;
-    justify-content: flex-end;
+    grid-area: auto;
+    justify-content: stretch;
     align-self: stretch;
     width: 100%;
-    padding-top: 0.24rem;
-    padding-bottom: 0.24rem;
+    padding: 0;
   }
 
   .song-board-status {
-    grid-area: status;
     justify-content: flex-start;
-    align-self: center;
+    align-self: start;
     gap: 0.28rem;
     flex-wrap: nowrap;
-    padding: 0.25rem 0.5rem 0.25rem 0;
+    padding: 0;
   }
 
   .song-board-status-label {
@@ -2477,7 +2522,8 @@ pre {
 
   .song-board-actions {
     grid-area: actions;
-    align-self: center;
+    align-self: stretch;
+    padding: 0.5rem 0;
   }
 
   .song-board-readiness-toggle-wrap {
@@ -2505,7 +2551,7 @@ pre {
         rgba(20, 24, 31, 0.98) 100%
       );
     box-shadow:
-      0 12px 20px rgba(0, 0, 0, 0.22),
+      0 6px 10px rgba(0, 0, 0, 0.16),
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
       inset 0 -1px 0 rgba(0, 0, 0, 0.18);
   }
@@ -2546,7 +2592,7 @@ pre {
       rgba(18, 22, 29, 0.98) 100%
     );
     box-shadow:
-      0 12px 20px rgba(0, 0, 0, 0.22),
+      0 6px 10px rgba(0, 0, 0, 0.16),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       inset 0 -1px 0 rgba(0, 0, 0, 0.18);
   }

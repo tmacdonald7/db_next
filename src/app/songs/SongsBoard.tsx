@@ -1388,18 +1388,11 @@ export function SongsBoard() {
         ? dropIndicator.position
         : null;
     const explicitVoteCount = countedSuggestionVoteCountMap.get(song.id) ?? 0;
-    const visibleVoteCount = visibleSuggestionVoteCountMap.get(song.id) ?? 0;
     const implicitActiveApproval =
       currentMember?.counts_toward_votes &&
       (song.status === "active" || song.status === "selected") &&
       explicitVoteCount < countedVotingMemberCount &&
       countedVotingMemberCount > 0;
-    const voteCount =
-      song.status === "active" || song.status === "selected"
-        ? countedVotingMemberCount
-        : implicitActiveApproval
-          ? countedVotingMemberCount
-          : visibleVoteCount;
     const voteProgressCount =
       song.status === "active" || song.status === "selected"
         ? countedVotingMemberCount
@@ -1486,118 +1479,122 @@ export function SongsBoard() {
           }
         }}
       >
-        <div className="song-board-main">
-          {typeof index === "number" ? (
-            <span className="song-row-number" aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-          ) : null}
-          {isDraggable ? (
-            <span className="song-drag-handle" aria-hidden="true">
-              <svg viewBox="0 0 16 16" focusable="false">
-                <circle cx="5" cy="4" r="1.2" />
-                <circle cx="11" cy="4" r="1.2" />
-                <circle cx="5" cy="8" r="1.2" />
-                <circle cx="11" cy="8" r="1.2" />
-                <circle cx="5" cy="12" r="1.2" />
-                <circle cx="11" cy="12" r="1.2" />
-              </svg>
-            </span>
-          ) : null}
-          <div className="song-board-copy">
-            <p className="song-board-title">
-              <span className="song-board-title-text">{song.title}</span>
-              <span className="song-board-artist">{song.artist}</span>
-            </p>
+        <div className="song-board-content-rail">
+          <div className="song-board-main">
+            {typeof index === "number" ? (
+              <span className="song-row-number" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+            ) : null}
+            {isDraggable ? (
+              <span className="song-drag-handle" aria-hidden="true">
+                <svg viewBox="0 0 16 16" focusable="false">
+                  <circle cx="5" cy="4" r="1.2" />
+                  <circle cx="11" cy="4" r="1.2" />
+                  <circle cx="5" cy="8" r="1.2" />
+                  <circle cx="11" cy="8" r="1.2" />
+                  <circle cx="5" cy="12" r="1.2" />
+                  <circle cx="11" cy="12" r="1.2" />
+                </svg>
+              </span>
+            ) : null}
+            <div className="song-board-copy">
+              <p className="song-board-title">
+                <span className="song-board-title-text">{song.title}</span>
+                <span className="song-board-artist">{song.artist}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="song-board-status">
+            <span className="song-board-status-label">Who&apos;s Ready:</span>
+            <div className="song-board-avatars">
+            {visibleVotingMembers.map((member) => {
+              const confidence = confidenceMap.get(member.id) ?? "dont_know";
+              const binaryConfidence = getBinaryConfidence(confidence);
+              const isCurrentMember = currentMember?.id === member.id;
+              const avatarClassName = `song-avatar song-avatar-${binaryConfidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
+              const avatarContent = member.avatar_url ? (
+                <img src={member.avatar_url} alt={member.display_name} />
+              ) : (
+                <span>{getMemberAvatarLabel(member)}</span>
+              );
+
+              return (
+                <div
+                  key={member.id}
+                  className={avatarClassName}
+                  aria-label={`${member.display_name}: ${getBinaryReadinessLabel(confidence)}`}
+                >
+                  {avatarContent}
+                </div>
+              );
+            })}
+            </div>
           </div>
         </div>
 
-        <div className="song-board-vote">
-          {(song.status === "suggested" ||
-            song.status === "active" ||
-            song.status === "selected") &&
-          currentMember ? (
-            <button
-              type="button"
-              className={`vote-chip vote-chip-vote vote-chip-vote-text${currentMemberHasVoted ? " is-active" : ""}`}
-              disabled={busyKey === `vote:${song.id}` || !currentMember.can_vote}
-              onClick={() => void toggleSuggestionVote(song)}
-              title={
-                !currentMember.can_vote
-                  ? `${voteProgressLabel} voting members`
-                  : currentMemberHasVoted
-                    ? `Remove vote (${voteProgressLabel})`
-                    : `Vote in (${voteProgressLabel})`
-              }
-              aria-label={
-                !currentMember.can_vote
-                  ? `${voteProgressLabel} voting members. Voting is disabled for this member.`
-                  : currentMemberHasVoted
-                    ? `Remove vote. ${voteProgressLabel} voting members.`
-                    : `Vote in. ${voteProgressLabel} voting members.`
-              }
-            >
-              <span className="vote-chip-vote-copy">
-                {getVoteButtonLines(currentMemberHasVoted).map((line) => (
-                  <span key={line} className="vote-chip-vote-line">
-                    {line}
-                  </span>
-                ))}
-              </span>
-              <span className="vote-chip-vote-count">{voteProgressLabel}</span>
-            </button>
-          ) : null}
-        </div>
+        <div className="song-board-action-rail">
+          <div className="song-board-readiness">
+            {currentMember?.can_vote && song.status !== "archived" ? (
+              <div className="song-board-readiness-toggle-wrap">
+                <button
+                  type="button"
+                  className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
+                  aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
+                  onClick={() => void toggleReadiness(song, currentConfidence)}
+                  disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
+                  >
+                    {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
+                      ? "Saving..."
+                      : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
+                          <span key={line} className="song-readiness-toggle-line">
+                            {line}
+                          </span>
+                        ))}
+                  </button>
+                <span className={`song-avatar-toast${isMobileToastVisible}`}>
+                  {mobileReadinessToast?.message}
+                </span>
+              </div>
+            ) : null}
+          </div>
 
-        <div className="song-board-readiness">
-          {currentMember?.can_vote && song.status !== "archived" ? (
-            <div className="song-board-readiness-toggle-wrap">
+          <div className="song-board-vote">
+            {(song.status === "suggested" ||
+              song.status === "active" ||
+              song.status === "selected") &&
+            currentMember ? (
               <button
                 type="button"
-                className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
-                aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
-                onClick={() => void toggleReadiness(song, currentConfidence)}
-                disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
-                >
-                  {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
-                    ? "Saving..."
-                    : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
-                        <span key={line} className="song-readiness-toggle-line">
-                          {line}
-                        </span>
-                      ))}
-                </button>
-              <span className={`song-avatar-toast${isMobileToastVisible}`}>
-                {mobileReadinessToast?.message}
-              </span>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="song-board-status">
-          <span className="song-board-status-label">Who&apos;s Ready:</span>
-          <div className="song-board-avatars">
-          {visibleVotingMembers.map((member) => {
-            const confidence = confidenceMap.get(member.id) ?? "dont_know";
-            const binaryConfidence = getBinaryConfidence(confidence);
-            const isCurrentMember = currentMember?.id === member.id;
-            const avatarClassName = `song-avatar song-avatar-${binaryConfidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
-            const avatarContent = member.avatar_url ? (
-              <img src={member.avatar_url} alt={member.display_name} />
-            ) : (
-              <span>{getMemberAvatarLabel(member)}</span>
-            );
-
-            return (
-              <div
-                key={member.id}
-                className={avatarClassName}
-                aria-label={`${member.display_name}: ${getBinaryReadinessLabel(confidence)}`}
+                className={`vote-chip vote-chip-vote vote-chip-vote-text${currentMemberHasVoted ? " is-active" : ""}`}
+                disabled={busyKey === `vote:${song.id}` || !currentMember.can_vote}
+                onClick={() => void toggleSuggestionVote(song)}
+                title={
+                  !currentMember.can_vote
+                    ? `${voteProgressLabel} voting members`
+                    : currentMemberHasVoted
+                      ? `Remove vote (${voteProgressLabel})`
+                      : `Vote in (${voteProgressLabel})`
+                }
+                aria-label={
+                  !currentMember.can_vote
+                    ? `${voteProgressLabel} voting members. Voting is disabled for this member.`
+                    : currentMemberHasVoted
+                      ? `Remove vote. ${voteProgressLabel} voting members.`
+                      : `Vote in. ${voteProgressLabel} voting members.`
+                }
               >
-                {avatarContent}
-              </div>
-            );
-          })}
+                <span className="vote-chip-vote-copy">
+                  {getVoteButtonLines(currentMemberHasVoted).map((line) => (
+                    <span key={line} className="vote-chip-vote-line">
+                      {line}
+                    </span>
+                  ))}
+                </span>
+                <span className="vote-chip-vote-count">{voteProgressLabel}</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
