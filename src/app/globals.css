@@ -2291,18 +2291,7 @@ pre {
 
   .songs-board-columns,
   .songs-board-columns.has-actions {
-    grid-template-columns: minmax(0, 1fr) 3.25rem 5.9rem auto;
-    gap: 0.35rem;
-    margin-bottom: 0.28rem;
-    font-size: 0.54rem;
-  }
-
-  .songs-board-columns.has-actions {
-    grid-template-columns: minmax(0, 1fr) 3.25rem 5.9rem auto auto;
-  }
-
-  .songs-board-columns-actions {
-    text-align: left;
+    display: none;
   }
 
   .songs-board-legend {
@@ -2339,24 +2328,25 @@ pre {
   }
 
   .song-board-row {
-    grid-template-columns: minmax(0, 1fr) 3.25rem 5.9rem auto;
+    grid-template-columns: 3.15rem 5.85rem minmax(0, 1fr);
     grid-template-areas:
-      "main main main main"
-      "vote readiness status status";
-    gap: 0.35rem;
-    padding: 0.35rem 0;
+      "main main main"
+      "vote readiness status";
+    gap: 0.4rem;
+    padding: 0.42rem 0;
   }
 
   .song-board-row.has-actions {
-    grid-template-columns: minmax(0, 1fr) 3.25rem 5.9rem auto auto;
+    grid-template-columns: 3.15rem 5.85rem minmax(0, 1fr) auto;
     grid-template-areas:
-      "main main main main main"
-      "vote readiness status status actions";
+      "main main main main"
+      "vote readiness status actions";
   }
 
   .song-board-main {
     grid-area: main;
     gap: 0.38rem;
+    align-items: flex-start;
   }
 
   .song-row-number {
@@ -2366,45 +2356,60 @@ pre {
   }
 
   .song-board-title {
-    gap: 0.28rem;
-    font-size: 0.84rem;
+    display: grid;
+    gap: 0.08rem;
+    font-size: 0.82rem;
+    line-height: 1.12;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .song-board-title-text {
+    display: block;
   }
 
   .song-board-artist {
-    font-size: 0.66rem;
+    display: block;
+    font-size: 0.7rem;
+    line-height: 1.15;
   }
 
   .song-board-vote,
   .song-board-readiness,
   .song-board-status {
-    justify-content: center;
+    align-items: center;
   }
 
   .song-board-vote {
     grid-area: vote;
+    justify-content: flex-start;
   }
 
   .song-board-readiness {
     grid-area: readiness;
+    justify-content: flex-start;
   }
 
   .song-board-status {
     grid-area: status;
+    justify-content: flex-start;
   }
 
   .song-board-actions {
     grid-area: actions;
+    align-self: center;
   }
 
   .song-readiness-toggle {
-    min-width: 5.9rem;
-    padding: 0.42rem 0.65rem;
+    min-width: 5.85rem;
+    padding: 0.4rem 0.6rem;
     font-size: 0.7rem;
   }
 
   .song-board-avatars {
     flex-wrap: nowrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.12rem;
   }
 
