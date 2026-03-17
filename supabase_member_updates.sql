@@ -6,6 +6,16 @@ alter table public.band_members
 
 update public.band_members
 set
+  display_name = case
+    when lower(coalesce(email, '')) = 'tmacdonald7@gmail.com' then 'Thomas MacDonald'
+    when lower(coalesce(email, '')) = 'dbouch9077@yahoo.com' then 'Dean Bouchard'
+    when lower(coalesce(email, '')) = 'anthonyberdecio@gmail.com' then 'Anthony Berdecio'
+    when phone = '+19362831476' then 'Thomas MacDonald'
+    when phone = '+19366489384' then 'Dean Bouchard'
+    when phone = '+17139335903' then 'Anthony Berdecio'
+    when phone = '+12103632606' then 'Gunnar Seaburg'
+    else display_name
+  end,
   avatar_label = null,
   avatar_theme = 'default',
   can_vote = true,
@@ -25,6 +35,11 @@ or phone in (
 
 update public.band_members
 set
+  display_name = case
+    when lower(coalesce(email, '')) = 'sgmacdonald1987@gmail.com' then 'Stephen MacDonald'
+    when lower(coalesce(email, '')) = 'giorgio.villani@spindletop.digital' then 'Giorgio Villani'
+    else display_name
+  end,
   avatar_label = null,
   avatar_theme = 'default',
   can_vote = false,
@@ -49,7 +64,7 @@ insert into public.band_members (
   is_hidden_from_band
 )
 values (
-  'Giorgio',
+  'Giorgio Villani',
   'Support',
   'giorgio.villani@spindletop.digital',
   null,
@@ -86,7 +101,7 @@ insert into public.band_members (
   is_hidden_from_band
 )
 values (
-  'Daniel',
+  'Daniel Batal',
   'Support',
   'daniel@danielbatal.com',
   null,
