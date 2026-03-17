@@ -2378,7 +2378,7 @@ pre {
     grid-template-areas:
       "main readiness vote"
       "status readiness vote";
-    column-gap: 0;
+    column-gap: 0.14rem;
     row-gap: 0;
     padding: 0;
     align-items: stretch;
@@ -2395,7 +2395,7 @@ pre {
     grid-area: main;
     gap: 0.42rem;
     align-items: flex-start;
-    padding: 0.5rem 0.55rem 0.2rem 0;
+    padding: 0.35rem 0.55rem 0.15rem 0;
   }
 
   .song-row-number {
@@ -2440,6 +2440,8 @@ pre {
     justify-content: flex-end;
     align-self: stretch;
     width: 100%;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
   }
 
   .song-board-readiness {
@@ -2447,6 +2449,8 @@ pre {
     justify-content: flex-end;
     align-self: stretch;
     width: 100%;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
   }
 
   .song-board-status {
@@ -2455,7 +2459,7 @@ pre {
     align-self: center;
     gap: 0.35rem;
     flex-wrap: nowrap;
-    padding: 0.2rem 0.55rem 0.5rem 0;
+    padding: 0.15rem 0.55rem 0.35rem 0;
   }
 
   .song-board-status-label {
@@ -2489,7 +2493,11 @@ pre {
     line-height: 1.05;
     white-space: normal;
     word-break: break-word;
-    border-radius: 0;
+    border-radius: 0.5rem;
+    border-width: 1px;
+    box-shadow:
+      0 10px 18px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   .song-board-avatars {
@@ -2520,7 +2528,16 @@ pre {
     width: 100%;
     min-width: 4.35rem;
     min-height: 3.65rem;
-    border-radius: 0;
+    border-radius: 0.5rem;
+    border-color: rgba(212, 163, 115, 0.38);
+    background: linear-gradient(
+      180deg,
+      rgba(33, 40, 52, 0.98) 0%,
+      rgba(18, 22, 29, 0.98) 100%
+    );
+    box-shadow:
+      0 10px 18px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .vote-chip-icon {
@@ -2549,6 +2566,14 @@ pre {
   .vote-chip-vote-count {
     font-size: 0.98rem;
     line-height: 1;
+  }
+
+  .song-readiness-toggle:not(:disabled):active,
+  .vote-chip-vote:not(:disabled):active {
+    transform: translateY(1px);
+    box-shadow:
+      0 6px 12px rgba(0, 0, 0, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .song-list li {
