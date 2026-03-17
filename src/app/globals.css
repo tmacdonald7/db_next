@@ -2340,15 +2340,22 @@ pre {
 
   .song-board-row {
     grid-template-columns: minmax(0, 1fr) 3.25rem 5.9rem auto;
+    grid-template-areas:
+      "main main main main"
+      "vote readiness status status";
     gap: 0.35rem;
     padding: 0.35rem 0;
   }
 
   .song-board-row.has-actions {
     grid-template-columns: minmax(0, 1fr) 3.25rem 5.9rem auto auto;
+    grid-template-areas:
+      "main main main main main"
+      "vote readiness status status actions";
   }
 
   .song-board-main {
+    grid-area: main;
     gap: 0.38rem;
   }
 
@@ -2371,6 +2378,22 @@ pre {
   .song-board-readiness,
   .song-board-status {
     justify-content: center;
+  }
+
+  .song-board-vote {
+    grid-area: vote;
+  }
+
+  .song-board-readiness {
+    grid-area: readiness;
+  }
+
+  .song-board-status {
+    grid-area: status;
+  }
+
+  .song-board-actions {
+    grid-area: actions;
   }
 
   .song-readiness-toggle {
