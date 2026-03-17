@@ -2180,6 +2180,46 @@ pre {
   margin-bottom: 1rem;
 }
 
+.songs-section-divider {
+  display: flex;
+  justify-content: center;
+  margin: 4rem 0 3.5rem;
+  pointer-events: none;
+}
+
+.songs-section-divider-line {
+  position: relative;
+  display: block;
+  width: min(100%, 28rem);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 163, 115, 0.14) 16%,
+    rgba(200, 90, 17, 0.55) 50%,
+    rgba(212, 163, 115, 0.14) 84%,
+    transparent 100%
+  );
+}
+
+.songs-section-divider-line::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(212, 163, 115, 0.95) 0%,
+    rgba(200, 90, 17, 0.6) 58%,
+    rgba(200, 90, 17, 0) 100%
+  );
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 12px rgba(200, 90, 17, 0.18);
+}
+
 .songs-board-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) 3.8rem minmax(6.2rem, auto) minmax(8.4rem, auto);
@@ -2480,6 +2520,14 @@ pre {
   .songs-board-columns,
   .songs-board-columns.has-actions {
     display: none;
+  }
+
+  .songs-section-divider {
+    margin: 3.6rem 0 3rem;
+  }
+
+  .songs-section-divider-line {
+    width: 100%;
   }
 
   .song-board-actions {

@@ -1912,6 +1912,10 @@ export function SongsBoard() {
         )}
       </article>
 
+      <div className="songs-section-divider" aria-hidden="true">
+        <span className="songs-section-divider-line" />
+      </div>
+
       <article className="panel section">
         <div className="section-heading section-heading-with-actions">
           <h2>Suggested Songs</h2>
