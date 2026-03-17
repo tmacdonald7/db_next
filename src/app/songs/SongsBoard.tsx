@@ -9,7 +9,6 @@ import {
 import {
   defaultSongCatalog,
   getSongSlug,
-  songConfidenceLabels,
   type SongConfidence,
   type SongStage,
 } from "@/lib/songs";
@@ -117,6 +116,14 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function getBinaryConfidence(confidence: SongConfidence): SongConfidence {
+  return confidence === "know_it" ? "know_it" : "dont_know";
+}
+
+function getBinaryReadinessLabel(confidence: SongConfidence) {
+  return getBinaryConfidence(confidence) === "know_it" ? "Ready" : "Not Ready";
+}
+
 function renderSongsBoardLegend() {
   return (
     <div className="songs-board-legend" aria-label="Songs board legend">
@@ -124,24 +131,18 @@ function renderSongsBoardLegend() {
       <div className="songs-board-legend-items">
         <span className="songs-board-legend-item">
           <span className="songs-board-legend-swatch song-avatar song-avatar-dont_know" aria-hidden="true">
-            ?
+            N
           </span>
-          Needs work
-        </span>
-        <span className="songs-board-legend-item">
-          <span className="songs-board-legend-swatch song-avatar song-avatar-close" aria-hidden="true">
-            ~
-          </span>
-          Getting there
+          Not ready
         </span>
         <span className="songs-board-legend-item">
           <span className="songs-board-legend-swatch song-avatar song-avatar-ready" aria-hidden="true">
-            +
+            R
           </span>
-          Gig ready
+          Ready
         </span>
         <span className="songs-board-legend-item songs-board-legend-item-note">
-          Your glowing avatar is clickable to set readiness.
+          Use the big readiness button to update your status.
         </span>
       </div>
     </div>
@@ -155,7 +156,10 @@ function renderSongsBoardHeaders(showActions: boolean) {
       aria-hidden="true"
     >
       <span>Song</span>
-      <span>Votes + Readiness</span>
+      <span className="songs-board-columns-controls">
+        <span>Votes</span>
+        <span>Readiness</span>
+      </span>
       {showActions ? <span>Actions</span> : null}
     </div>
   );
@@ -694,17 +698,13 @@ export function SongsBoard() {
       window.clearTimeout(mobileReadinessToastTimeoutRef.current);
     }
 
-    const message =
-      confidence === "dont_know"
-        ? "Needs Work"
-        : confidence === "kind_of_know"
-          ? "Getting There"
-          : "Gig Ready";
+    const binaryConfidence = getBinaryConfidence(confidence);
+    const message = binaryConfidence === "know_it" ? "Ready to Rock" : "Not Ready Yet";
 
     setMobileReadinessToast({
       songId,
       message,
-      tone: confidence,
+      tone: binaryConfidence,
     });
 
     mobileReadinessToastTimeoutRef.current = window.setTimeout(() => {
@@ -985,13 +985,9 @@ export function SongsBoard() {
     }
   }
 
-  async function cycleAvatarConfidence(song: SongRecord, currentConfidence: SongConfidence) {
+  async function toggleReadiness(song: SongRecord, currentConfidence: SongConfidence) {
     const nextConfidence =
-      currentConfidence === "dont_know"
-        ? "kind_of_know"
-        : currentConfidence === "kind_of_know"
-          ? "know_it"
-          : "dont_know";
+      getBinaryConfidence(currentConfidence) === "know_it" ? "dont_know" : "know_it";
 
     await updateConfidence(song.id, nextConfidence);
     showMobileReadinessPopup(song.id, nextConfidence);
@@ -1362,6 +1358,8 @@ export function SongsBoard() {
     const currentConfidence = currentMember
       ? confidenceMap.get(currentMember.id) ?? "dont_know"
       : "dont_know";
+    const binaryCurrentConfidence = getBinaryConfidence(currentConfidence);
+    const isCurrentMemberReady = binaryCurrentConfidence === "know_it";
     const songBucket = getSongBucket(song);
     const isDraggable = Boolean(currentMember?.is_admin) && songBucket === "active";
     const isDragSource = dragSongId === song.id && dragBucket === songBucket;
@@ -1478,7 +1476,7 @@ export function SongsBoard() {
           ) : null}
           <div className="song-board-copy">
             <p className="song-board-title">
-              <span>{song.title}</span>
+              <span className="song-board-title-text">{song.title}</span>
               <span className="song-board-artist">{song.artist}</span>
             </p>
           </div>
@@ -1517,49 +1515,49 @@ export function SongsBoard() {
             </button>
           ) : null}
 
-          <div className="song-board-avatars">
+          <div className="song-board-readiness">
+            {currentMember?.can_vote && song.status !== "archived" ? (
+              <div className="song-board-readiness-toggle-wrap">
+                <button
+                  type="button"
+                  className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
+                  aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
+                  onClick={() => void toggleReadiness(song, currentConfidence)}
+                  disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
+                >
+                  {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
+                    ? "Saving..."
+                    : getBinaryReadinessLabel(currentConfidence)}
+                </button>
+                <span className={`song-avatar-toast${isMobileToastVisible}`}>
+                  {mobileReadinessToast?.message}
+                </span>
+              </div>
+            ) : null}
+
+            <div className="song-board-avatars">
             {visibleVotingMembers.map((member) => {
               const confidence = confidenceMap.get(member.id) ?? "dont_know";
+              const binaryConfidence = getBinaryConfidence(confidence);
               const isCurrentMember = currentMember?.id === member.id;
-              const avatarClassName = `song-avatar song-avatar-${confidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
+              const avatarClassName = `song-avatar song-avatar-${binaryConfidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
               const avatarContent = member.avatar_url ? (
                 <img src={member.avatar_url} alt={member.display_name} />
               ) : (
                 <span>{getMemberAvatarLabel(member)}</span>
               );
 
-              if (
-                isCurrentMember &&
-                currentMember?.can_vote &&
-                song.status !== "archived"
-              ) {
-                return (
-                  <button
-                    key={member.id}
-                    type="button"
-                    className={`${avatarClassName} song-avatar-button`}
-                    aria-label={`Set your readiness for ${song.title}. Current status: ${songConfidenceLabels[confidence]}`}
-                    onClick={() => void cycleAvatarConfidence(song, confidence)}
-                    disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
-                  >
-                    {avatarContent}
-                    <span className={`song-avatar-toast${isMobileToastVisible}`}>
-                      {mobileReadinessToast?.message}
-                    </span>
-                  </button>
-                );
-              }
-
               return (
                 <div
                   key={member.id}
                   className={avatarClassName}
-                  aria-label={`${member.display_name}: ${songConfidenceLabels[confidence]}`}
+                  aria-label={`${member.display_name}: ${getBinaryReadinessLabel(confidence)}`}
                 >
                   {avatarContent}
                 </div>
               );
             })}
+            </div>
           </div>
 
           <div className="song-board-actions">
@@ -1769,7 +1767,7 @@ export function SongsBoard() {
           </p>
         </div>
         <p className="songs-mobile-readiness-note">
-          Tap your avatar in the song row to set your readiness.
+          Tap the readiness button in each song row to update your status.
         </p>
         {renderSongsBoardLegend()}
       </div>

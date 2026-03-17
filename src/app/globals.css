@@ -1656,6 +1656,16 @@ pre {
   gap: 0.22rem;
 }
 
+.song-board-readiness {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.song-board-readiness-toggle-wrap {
+  position: relative;
+}
+
 .song-avatar {
   width: 1.65rem;
   height: 1.65rem;
@@ -1670,37 +1680,6 @@ pre {
   font-size: 0.62rem;
   font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(244, 239, 230, 0.04);
-}
-
-.song-avatar-button {
-  appearance: none;
-  padding: 0;
-  cursor: pointer;
-  overflow: visible;
-  z-index: 1;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
-}
-
-.song-avatar-button:disabled {
-  cursor: default;
-}
-
-.song-avatar-button,
-.song-avatar-button * {
-  cursor: pointer;
-}
-
-.song-avatar-button:disabled,
-.song-avatar-button:disabled * {
-  cursor: default;
-}
-
-.song-avatar-button:not(:disabled):focus-visible {
-  outline: 2px solid rgba(212, 163, 115, 0.5);
-  outline-offset: 2px;
 }
 
 .song-avatar-investor {
@@ -1820,11 +1799,70 @@ pre {
 }
 
 .song-board-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto;
   align-items: center;
   gap: 0.4rem;
   justify-content: flex-end;
   min-width: 0;
+}
+
+.song-readiness-toggle {
+  appearance: none;
+  min-width: 7rem;
+  border: 1px solid rgba(212, 163, 115, 0.24);
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  background: rgba(18, 22, 29, 0.96);
+  color: var(--foreground);
+  font-family: var(--font-display-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.song-readiness-toggle:not(:disabled) {
+  cursor: pointer;
+}
+
+.song-readiness-toggle.is-ready {
+  border-color: rgba(118, 185, 92, 0.4);
+  background: linear-gradient(
+    180deg,
+    rgba(54, 122, 66, 0.3) 0%,
+    rgba(29, 36, 48, 0.98) 100%
+  );
+  color: #dff3d8;
+  box-shadow: 0 0 18px rgba(54, 122, 66, 0.18);
+}
+
+.song-readiness-toggle.is-not-ready {
+  border-color: rgba(200, 90, 17, 0.34);
+  background: linear-gradient(
+    180deg,
+    rgba(200, 90, 17, 0.2) 0%,
+    rgba(29, 36, 48, 0.98) 100%
+  );
+  color: #f1dccf;
+  box-shadow: 0 0 18px rgba(200, 90, 17, 0.12);
+}
+
+.song-readiness-toggle:not(:disabled):focus-visible {
+  outline: 2px solid rgba(212, 163, 115, 0.56);
+  outline-offset: 2px;
+}
+
+.song-readiness-toggle:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .vote-chip {
@@ -2011,6 +2049,18 @@ pre {
 
 .songs-board-columns.has-actions {
   grid-template-columns: minmax(0, 1.7fr) auto auto;
+}
+
+.songs-board-columns-controls {
+  display: grid;
+  grid-template-columns: 3.8rem minmax(7rem, auto);
+  gap: 0.4rem;
+  align-items: end;
+  justify-content: end;
+}
+
+.songs-board-columns-controls span {
+  text-align: center;
 }
 
 .songs-board-columns span:last-child {
@@ -2237,6 +2287,11 @@ pre {
     font-size: 0.62rem;
   }
 
+  .songs-board-columns-controls {
+    grid-template-columns: 3.35rem auto;
+    justify-content: flex-start;
+  }
+
   .songs-board-columns span:last-child {
     text-align: left;
   }
@@ -2255,8 +2310,8 @@ pre {
 
   .song-board-controls {
     justify-content: flex-start;
-    flex-wrap: nowrap;
-    gap: 0.38rem;
+    grid-template-columns: 1fr;
+    gap: 0.42rem;
   }
 
   .song-board-actions {
@@ -2264,7 +2319,15 @@ pre {
   }
 
   .panel.section {
-    padding: 1rem 0.9rem;
+    padding: 0.85rem 0.18rem;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .panel.section::before {
+    display: none;
   }
 
   .active-set-heading {
@@ -2277,12 +2340,35 @@ pre {
   }
 
   .song-board-title {
-    gap: 0.34rem;
+    display: grid;
+    gap: 0.12rem;
     font-size: clamp(0.84rem, 3.6vw, 0.98rem);
   }
 
+  .song-board-title-text {
+    display: block;
+  }
+
   .song-board-artist {
+    display: block;
     font-size: clamp(0.73rem, 3vw, 0.8rem);
+    line-height: 1.2;
+  }
+
+  .song-board-readiness {
+    width: 100%;
+    gap: 0.32rem;
+  }
+
+  .song-board-readiness-toggle-wrap {
+    width: 100%;
+  }
+
+  .song-readiness-toggle {
+    width: 100%;
+    min-width: 0;
+    padding: 0.72rem 0.95rem;
+    font-size: 0.84rem;
   }
 
   .song-board-avatars {
