@@ -1586,8 +1586,12 @@ pre {
 }
 
 .active-set-heading h3 {
-  font-size: 1rem;
-  font-weight: 700;
+  font-family: var(--font-display-primary);
+  font-size: 1.28rem;
+  font-weight: 600;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--foreground);
 }
 
@@ -1707,7 +1711,6 @@ pre {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  border: 1px solid rgba(212, 163, 115, 0.14);
   color: var(--secondary-soft);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -2430,6 +2433,8 @@ pre {
 
   .active-set-grid {
     grid-template-columns: 1fr;
+    padding-top: 1.25rem;
+    gap: 2.35rem;
   }
 
   .active-set-card {
@@ -2451,6 +2456,18 @@ pre {
       transparent 100%
     );
     text-align: center;
+  }
+
+  .active-set-heading h3 {
+    font-family: var(--font-display-secondary);
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .active-set-heading span {
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
   }
 
   .songs-voting-item {
