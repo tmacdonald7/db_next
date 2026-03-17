@@ -60,6 +60,8 @@ type SongSuggestionVote = {
 };
 
 type SongBucket = "active" | "suggested" | "archived";
+
+const SELF_MEMBER_VIEW_KEY = "__self_member_view__";
 type DropIndicator = {
   songId: string;
   bucket: SongBucket;
@@ -155,12 +157,11 @@ function renderSongsBoardHeaders(showActions: boolean) {
       className={`songs-board-columns${showActions ? " has-actions" : ""}`}
       aria-hidden="true"
     >
-      <span>Song</span>
-      <span className="songs-board-columns-controls">
-        <span>Votes</span>
-        <span>Readiness</span>
-      </span>
-      {showActions ? <span>Actions</span> : null}
+      <span className="songs-board-columns-song">Song</span>
+      <span className="songs-board-columns-metric">Set List?</span>
+      <span className="songs-board-columns-metric">You Gig Ready?</span>
+      <span className="songs-board-columns-metric">Who's Ready</span>
+      {showActions ? <span className="songs-board-columns-actions">Actions</span> : null}
     </div>
   );
 }
@@ -362,9 +363,14 @@ export function SongsBoard() {
     () => members.find((member) => matchesCurrentMember(member, sessionUser)) ?? null,
     [members, sessionUser],
   );
+  const isSelfMemberView = impersonatedMemberId === SELF_MEMBER_VIEW_KEY;
   const currentMember = useMemo(() => {
     if (!impersonatedMemberId) {
       return actualMember;
+    }
+
+    if (impersonatedMemberId === SELF_MEMBER_VIEW_KEY) {
+      return actualMember ? { ...actualMember, is_admin: false } : actualMember;
     }
 
     return members.find((member) => member.id === impersonatedMemberId) ?? actualMember;
@@ -372,7 +378,7 @@ export function SongsBoard() {
   const isImpersonating =
     Boolean(impersonatedMemberId) &&
     Boolean(actualMember) &&
-    currentMember?.id !== actualMember?.id;
+    (currentMember?.id !== actualMember?.id || isSelfMemberView);
   const canSeePrivateMembers = Boolean(actualMember?.is_admin) && !isImpersonating;
   const visibleVotingMembers = useMemo(
     () =>
@@ -414,7 +420,11 @@ export function SongsBoard() {
       return;
     }
 
-    if (impersonatedMemberId && !members.some((member) => member.id === impersonatedMemberId)) {
+    if (
+      impersonatedMemberId &&
+      impersonatedMemberId !== SELF_MEMBER_VIEW_KEY &&
+      !members.some((member) => member.id === impersonatedMemberId)
+    ) {
       setImpersonatedMemberId(null);
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("songs-board-impersonation-member-id");
@@ -1396,7 +1406,7 @@ export function SongsBoard() {
             songRowRefs.current.delete(song.id);
           }
         }}
-        className={`song-board-row${isDraggable ? " is-draggable" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
+        className={`song-board-row${currentMember?.is_admin ? " has-actions" : ""}${isDraggable ? " is-draggable" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
         draggable={isDraggable}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = "move";
@@ -1482,7 +1492,7 @@ export function SongsBoard() {
           </div>
         </div>
 
-        <div className="song-board-controls">
+        <div className="song-board-vote">
           {(song.status === "suggested" ||
             song.status === "active" ||
             song.status === "selected") &&
@@ -1514,64 +1524,66 @@ export function SongsBoard() {
               <span>{voteCount}</span>
             </button>
           ) : null}
+        </div>
 
-          <div className="song-board-readiness">
-            {currentMember?.can_vote && song.status !== "archived" ? (
-              <div className="song-board-readiness-toggle-wrap">
-                <button
-                  type="button"
-                  className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
-                  aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
-                  onClick={() => void toggleReadiness(song, currentConfidence)}
-                  disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
-                >
-                  {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
-                    ? "Saving..."
-                    : getBinaryReadinessLabel(currentConfidence)}
-                </button>
-                <span className={`song-avatar-toast${isMobileToastVisible}`}>
-                  {mobileReadinessToast?.message}
-                </span>
-              </div>
-            ) : null}
-
-            <div className="song-board-avatars">
-            {visibleVotingMembers.map((member) => {
-              const confidence = confidenceMap.get(member.id) ?? "dont_know";
-              const binaryConfidence = getBinaryConfidence(confidence);
-              const isCurrentMember = currentMember?.id === member.id;
-              const avatarClassName = `song-avatar song-avatar-${binaryConfidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
-              const avatarContent = member.avatar_url ? (
-                <img src={member.avatar_url} alt={member.display_name} />
-              ) : (
-                <span>{getMemberAvatarLabel(member)}</span>
-              );
-
-              return (
-                <div
-                  key={member.id}
-                  className={avatarClassName}
-                  aria-label={`${member.display_name}: ${getBinaryReadinessLabel(confidence)}`}
-                >
-                  {avatarContent}
-                </div>
-              );
-            })}
-            </div>
-          </div>
-
-          <div className="song-board-actions">
-            {currentMember?.is_admin ? (
+        <div className="song-board-readiness">
+          {currentMember?.can_vote && song.status !== "archived" ? (
+            <div className="song-board-readiness-toggle-wrap">
               <button
                 type="button"
-                className="vote-chip archive-action"
-                disabled={busyKey === `edit:${song.id}`}
-                onClick={() => void editSong(song)}
+                className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
+                aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
+                onClick={() => void toggleReadiness(song, currentConfidence)}
+                disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
               >
-                Edit
+                {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
+                  ? "Saving..."
+                  : getBinaryReadinessLabel(currentConfidence)}
               </button>
-            ) : null}
-            {currentMember?.is_admin && song.status === "archived" ? (
+              <span className={`song-avatar-toast${isMobileToastVisible}`}>
+                {mobileReadinessToast?.message}
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="song-board-status">
+          <div className="song-board-avatars">
+          {visibleVotingMembers.map((member) => {
+            const confidence = confidenceMap.get(member.id) ?? "dont_know";
+            const binaryConfidence = getBinaryConfidence(confidence);
+            const isCurrentMember = currentMember?.id === member.id;
+            const avatarClassName = `song-avatar song-avatar-${binaryConfidence}${isCurrentMember ? " is-current" : ""}${member.avatar_theme === "investor" ? " song-avatar-investor" : ""}`;
+            const avatarContent = member.avatar_url ? (
+              <img src={member.avatar_url} alt={member.display_name} />
+            ) : (
+              <span>{getMemberAvatarLabel(member)}</span>
+            );
+
+            return (
+              <div
+                key={member.id}
+                className={avatarClassName}
+                aria-label={`${member.display_name}: ${getBinaryReadinessLabel(confidence)}`}
+              >
+                {avatarContent}
+              </div>
+            );
+          })}
+          </div>
+        </div>
+
+        {currentMember?.is_admin ? (
+          <div className="song-board-actions">
+            <button
+              type="button"
+              className="vote-chip archive-action"
+              disabled={busyKey === `edit:${song.id}`}
+              onClick={() => void editSong(song)}
+            >
+              Edit
+            </button>
+            {song.status === "archived" ? (
               <button
                 type="button"
                 className="vote-chip"
@@ -1581,7 +1593,7 @@ export function SongsBoard() {
                 Restore To Active
               </button>
             ) : null}
-            {currentMember?.is_admin && song.status === "archived" ? (
+            {song.status === "archived" ? (
               <button
                 type="button"
                 className="vote-chip"
@@ -1591,7 +1603,7 @@ export function SongsBoard() {
                 Restore To Suggested
               </button>
             ) : null}
-            {currentMember?.is_admin && song.status === "suggested" ? (
+            {song.status === "suggested" ? (
               <button
                 type="button"
                 className="vote-chip archive-action"
@@ -1602,7 +1614,7 @@ export function SongsBoard() {
               </button>
             ) : null}
           </div>
-        </div>
+        ) : null}
       </li>
     );
   }
@@ -1680,7 +1692,7 @@ export function SongsBoard() {
                 <span>Testing View</span>
                 <select
                   className="songs-impersonation-select"
-                  value={isImpersonating ? currentMember?.id ?? "" : ""}
+                  value={impersonatedMemberId ?? ""}
                   onChange={(event) => {
                     const nextMemberId = event.target.value || null;
                     setImpersonatedMemberId(nextMemberId);
@@ -1701,6 +1713,11 @@ export function SongsBoard() {
                   }}
                 >
                   <option value="">My admin view</option>
+                  {actualMember ? (
+                    <option value={SELF_MEMBER_VIEW_KEY}>
+                      {actualMember.display_name} | {actualMember.instrument} | Member view
+                    </option>
+                  ) : null}
                   {members.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.display_name} | {member.instrument}
@@ -1710,9 +1727,10 @@ export function SongsBoard() {
               </label>
               {isImpersonating && currentMember ? (
                 <p className="songs-impersonation-copy">
-                  Testing as {currentMember.display_name}. Member actions run through an
-                  admin-only proxy so you can vote, suggest songs, and update readiness
-                  without leaving your account.
+                  Testing as {currentMember.display_name}
+                  {isSelfMemberView ? " in member mode" : ""}. Member actions run through
+                  an admin-only proxy so you can vote, suggest songs, and update
+                  readiness without leaving your account.
                 </p>
               ) : (
                 <p className="songs-impersonation-copy">

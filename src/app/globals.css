@@ -1526,11 +1526,20 @@ pre {
 .song-board-row {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) auto auto;
+  grid-template-columns: minmax(0, 1.7fr) 3.8rem minmax(6.2rem, auto) minmax(8.4rem, auto);
   gap: 0.7rem;
   align-items: center;
   padding: 0.42rem 0;
   border-top: 1px solid rgba(212, 163, 115, 0.1);
+}
+
+.song-board-row.has-actions {
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    3.8rem
+    minmax(6.2rem, auto)
+    minmax(8.4rem, auto)
+    auto;
 }
 
 .song-board-row:first-child {
@@ -1549,7 +1558,10 @@ pre {
 
 .song-board-row.is-drag-source .song-board-main,
 .song-board-row.is-drag-source .song-board-avatars,
-.song-board-row.is-drag-source .song-board-controls {
+.song-board-row.is-drag-source .song-board-readiness,
+.song-board-row.is-drag-source .song-board-vote,
+.song-board-row.is-drag-source .song-board-status,
+.song-board-row.is-drag-source .song-board-actions {
   pointer-events: none;
 }
 
@@ -1650,20 +1662,26 @@ pre {
   text-overflow: ellipsis;
 }
 
-.song-board-avatars {
+.song-board-vote,
+.song-board-readiness,
+.song-board-status {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.22rem;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
 }
 
-.song-board-readiness {
-  display: grid;
-  gap: 0.35rem;
-  justify-items: start;
+.song-board-avatars {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.22rem;
 }
 
 .song-board-readiness-toggle-wrap {
   position: relative;
+  flex: 0 0 auto;
 }
 
 .song-avatar {
@@ -1798,25 +1816,16 @@ pre {
   }
 }
 
-.song-board-controls {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  gap: 0.4rem;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
 .song-readiness-toggle {
   appearance: none;
-  min-width: 7rem;
+  min-width: 6.2rem;
   border: 1px solid rgba(212, 163, 115, 0.24);
   border-radius: 999px;
-  padding: 0.5rem 0.95rem;
+  padding: 0.4rem 0.82rem;
   background: rgba(18, 22, 29, 0.96);
   color: var(--foreground);
   font-family: var(--font-display-secondary);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -1890,7 +1899,8 @@ pre {
 
 .song-board-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.3rem;
 }
@@ -1905,8 +1915,8 @@ pre {
   border: none;
   background: transparent;
   color: var(--foreground-muted);
-  padding: 0.1rem 0.2rem;
-  font-size: 0.76rem;
+  padding: 0.08rem 0.18rem;
+  font-size: 0.72rem;
   letter-spacing: 0.01em;
   text-transform: none;
 }
@@ -2034,7 +2044,7 @@ pre {
 
 .songs-board-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) auto;
+  grid-template-columns: minmax(0, 1.7fr) 3.8rem minmax(6.2rem, auto) minmax(8.4rem, auto);
   gap: 0.7rem;
   align-items: end;
   margin: 0 0 0.38rem;
@@ -2048,22 +2058,23 @@ pre {
 }
 
 .songs-board-columns.has-actions {
-  grid-template-columns: minmax(0, 1.7fr) auto auto;
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    3.8rem
+    minmax(6.2rem, auto)
+    minmax(8.4rem, auto)
+    auto;
 }
 
-.songs-board-columns-controls {
-  display: grid;
-  grid-template-columns: 3.8rem minmax(7rem, auto);
-  gap: 0.4rem;
-  align-items: end;
-  justify-content: end;
+.songs-board-columns-song {
+  text-align: left;
 }
 
-.songs-board-columns-controls span {
+.songs-board-columns-metric {
   text-align: center;
 }
 
-.songs-board-columns span:last-child {
+.songs-board-columns-actions {
   text-align: right;
 }
 
@@ -2287,12 +2298,7 @@ pre {
     font-size: 0.62rem;
   }
 
-  .songs-board-columns-controls {
-    grid-template-columns: 3.35rem auto;
-    justify-content: flex-start;
-  }
-
-  .songs-board-columns span:last-child {
+  .songs-board-columns-actions {
     text-align: left;
   }
 
@@ -2308,14 +2314,9 @@ pre {
     font-size: 0.74rem;
   }
 
-  .song-board-controls {
-    justify-content: flex-start;
-    grid-template-columns: 1fr;
-    gap: 0.42rem;
-  }
-
   .song-board-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .panel.section {
@@ -2356,8 +2357,10 @@ pre {
   }
 
   .song-board-readiness {
+    display: grid;
     width: 100%;
     gap: 0.32rem;
+    justify-content: flex-start;
   }
 
   .song-board-readiness-toggle-wrap {
@@ -2372,6 +2375,8 @@ pre {
   }
 
   .song-board-avatars {
+    flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 0.18rem;
   }
 
