@@ -124,17 +124,17 @@ function getBinaryConfidence(confidence: SongConfidence): SongConfidence {
 }
 
 function getBinaryReadinessLabel(confidence: SongConfidence) {
-  return getBinaryConfidence(confidence) === "know_it" ? "Gig Ready" : "Ready to Gig?";
+  return getBinaryConfidence(confidence) === "know_it" ? "Play Ready" : "Ready to Play?";
 }
 
 function getBinaryReadinessButtonLabel(confidence: SongConfidence) {
   return getBinaryConfidence(confidence) === "know_it"
-    ? ["Gig", "Ready"]
-    : ["Ready", "to", "Gig?"];
+    ? ["Play", "Ready"]
+    : ["Ready", "to", "Play?"];
 }
 
 function getVoteButtonLines(hasVoted: boolean) {
-  return hasVoted ? ["Vote To", "Gig"] : ["Vote To", "Gig"];
+  return hasVoted ? ["Add To", "Set"] : ["Add To", "Set"];
 }
 
 function renderSongsBoardHeaders(showActions: boolean) {
@@ -146,8 +146,8 @@ function renderSongsBoardHeaders(showActions: boolean) {
       <span className="songs-board-columns-song">Song</span>
       <span className="songs-board-columns-metric">Set List?</span>
       <span className="songs-board-columns-metric">Who&apos;s Ready</span>
-      <span className="songs-board-columns-metric">Vote To Gig?</span>
-      <span className="songs-board-columns-metric">You Gig Ready?</span>
+      <span className="songs-board-columns-metric">Add To Set?</span>
+      <span className="songs-board-columns-metric">Ready To Play?</span>
       {showActions ? <span className="songs-board-columns-actions">Actions</span> : null}
     </div>
   );
@@ -1815,7 +1815,7 @@ export function SongsBoard() {
       </div>
 
       <article className="panel section">
-        <div className="section-heading section-heading-with-actions section-heading-with-inline-actions">
+        <div className="section-heading section-heading-with-actions section-heading-with-inline-actions songs-section-heading">
           <h2>Set List</h2>
           <div className="section-actions">
             {canSortSetList && activeSongs.length > 1 ? (
@@ -1904,15 +1904,17 @@ export function SongsBoard() {
       </div>
 
       <article className="panel section">
-        <div className="section-heading section-heading-with-actions">
+        <div className="section-heading section-heading-with-actions section-heading-with-inline-actions songs-section-heading">
           <h2>Suggested Songs</h2>
-          <button
-            type="button"
-            className="section-action section-action-utility"
-            onClick={exportSuggestedSongs}
-          >
-            Export PDF
-          </button>
+          <div className="section-actions">
+            <button
+              type="button"
+              className="section-action section-action-utility"
+              onClick={exportSuggestedSongs}
+            >
+              Export PDF
+            </button>
+          </div>
         </div>
         {suggestedSongs.length > 0 ? (
           <>
