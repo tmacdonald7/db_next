@@ -1,8 +1,12 @@
 alter table public.band_members
   add column if not exists avatar_label text,
   add column if not exists avatar_theme text not null default 'default' check (avatar_theme in ('default', 'investor')),
+  add column if not exists can_sort_setlist boolean not null default false,
   add column if not exists counts_toward_votes boolean not null default true,
   add column if not exists is_hidden_from_band boolean not null default false;
+
+update public.band_members
+set can_sort_setlist = true;
 
 update public.band_members
 set
@@ -19,6 +23,7 @@ set
   avatar_label = null,
   avatar_theme = 'default',
   can_vote = true,
+  can_sort_setlist = true,
   counts_toward_votes = true,
   is_hidden_from_band = false
 where lower(coalesce(email, '')) in (
@@ -43,6 +48,7 @@ set
   avatar_label = null,
   avatar_theme = 'default',
   can_vote = false,
+  can_sort_setlist = true,
   counts_toward_votes = false,
   is_hidden_from_band = false
 where lower(coalesce(email, '')) in (
@@ -60,6 +66,7 @@ insert into public.band_members (
   avatar_theme,
   is_admin,
   can_vote,
+  can_sort_setlist,
   counts_toward_votes,
   is_hidden_from_band
 )
@@ -73,6 +80,7 @@ values (
   'default',
   false,
   false,
+  true,
   false,
   false
 )
@@ -84,6 +92,7 @@ set
   avatar_theme = excluded.avatar_theme,
   is_admin = excluded.is_admin,
   can_vote = excluded.can_vote,
+  can_sort_setlist = excluded.can_sort_setlist,
   counts_toward_votes = excluded.counts_toward_votes,
   is_hidden_from_band = excluded.is_hidden_from_band;
 
@@ -97,6 +106,7 @@ insert into public.band_members (
   avatar_theme,
   is_admin,
   can_vote,
+  can_sort_setlist,
   counts_toward_votes,
   is_hidden_from_band
 )
@@ -110,6 +120,7 @@ values (
   'investor',
   false,
   true,
+  true,
   false,
   true
 )
@@ -121,5 +132,6 @@ set
   avatar_theme = excluded.avatar_theme,
   is_admin = excluded.is_admin,
   can_vote = excluded.can_vote,
+  can_sort_setlist = excluded.can_sort_setlist,
   counts_toward_votes = excluded.counts_toward_votes,
   is_hidden_from_band = excluded.is_hidden_from_band;

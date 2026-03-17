@@ -33,6 +33,7 @@ type BandMember = {
   avatar_theme: "default" | "investor";
   is_admin: boolean;
   can_vote: boolean;
+  can_sort_setlist: boolean;
   counts_toward_votes: boolean;
   is_hidden_from_band: boolean;
 };
@@ -136,31 +137,6 @@ function getVoteButtonLines(hasVoted: boolean) {
   return hasVoted ? ["Vote To", "Gig"] : ["Vote To", "Gig"];
 }
 
-function renderSongsBoardLegend() {
-  return (
-    <div className="songs-board-legend" aria-label="Songs board legend">
-      <p className="songs-board-legend-title">Legend</p>
-      <div className="songs-board-legend-items">
-        <span className="songs-board-legend-item">
-          <span className="songs-board-legend-swatch song-avatar song-avatar-dont_know" aria-hidden="true">
-            N
-          </span>
-          Not ready
-        </span>
-        <span className="songs-board-legend-item">
-          <span className="songs-board-legend-swatch song-avatar song-avatar-ready" aria-hidden="true">
-            R
-          </span>
-          Ready
-        </span>
-        <span className="songs-board-legend-item songs-board-legend-item-note">
-          Use the big readiness button to update your status.
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function renderSongsBoardHeaders(showActions: boolean) {
   return (
     <div
@@ -232,6 +208,7 @@ export function SongsBoard() {
   const [dragSongId, setDragSongId] = useState<string | null>(null);
   const [dragBucket, setDragBucket] = useState<SongBucket | null>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
+  const [isSetListSortMode, setIsSetListSortMode] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [impersonatedMemberId, setImpersonatedMemberId] = useState<string | null>(null);
   const [mobileReadinessToast, setMobileReadinessToast] = useState<{
@@ -315,7 +292,7 @@ export function SongsBoard() {
         client
           .from("band_members")
           .select(
-            "id, display_name, instrument, email, phone, avatar_url, avatar_label, avatar_theme, is_admin, can_vote, counts_toward_votes, is_hidden_from_band",
+            "id, display_name, instrument, email, phone, avatar_url, avatar_label, avatar_theme, is_admin, can_vote, can_sort_setlist, counts_toward_votes, is_hidden_from_band",
           )
           .order("created_at", { ascending: true }),
         client
@@ -390,6 +367,7 @@ export function SongsBoard() {
     Boolean(actualMember) &&
     (currentMember?.id !== actualMember?.id || isSelfMemberView);
   const canSeePrivateMembers = Boolean(actualMember?.is_admin) && !isImpersonating;
+  const canSortSetList = Boolean(currentMember?.can_sort_setlist);
   const visibleVotingMembers = useMemo(
     () =>
       [...members]
@@ -441,6 +419,15 @@ export function SongsBoard() {
       }
     }
   }, [actualMember?.is_admin, impersonatedMemberId, members]);
+
+  useEffect(() => {
+    if (!canSortSetList && isSetListSortMode) {
+      setIsSetListSortMode(false);
+      setDragSongId(null);
+      setDragBucket(null);
+      setDropIndicator(null);
+    }
+  }, [canSortSetList, isSetListSortMode]);
 
   const songStatusMap = useMemo(() => {
     const map = new Map<string, Map<string, SongConfidence>>();
@@ -654,7 +641,7 @@ export function SongsBoard() {
       })
       .join("");
 
-    openPrintExport("Active Set List", sections);
+    openPrintExport("Set List", sections);
   }
 
   function exportSuggestedSongs() {
@@ -1233,7 +1220,7 @@ export function SongsBoard() {
     targetSongId: string,
     position: "before" | "after",
   ) {
-    if (!currentMember?.is_admin || !supabase) {
+    if (!currentMember?.can_sort_setlist || !supabase) {
       return;
     }
 
@@ -1314,7 +1301,7 @@ export function SongsBoard() {
   }
 
   async function moveActiveSongToSet(songId: string, setNumber: number) {
-    if (!currentMember?.is_admin || !supabase) {
+    if (!currentMember?.can_sort_setlist || !supabase) {
       return;
     }
 
@@ -1373,7 +1360,15 @@ export function SongsBoard() {
     }
   }
 
-  function renderSongRow(song: SongRecord, index?: number) {
+  function renderSongRow(
+    song: SongRecord,
+    options?: {
+      index?: number;
+      setNumber?: number;
+    },
+  ) {
+    const index = options?.index;
+    const setNumber = options?.setNumber;
     const confidenceMap = songStatusMap.get(song.id) ?? new Map<string, SongConfidence>();
     const currentConfidence = currentMember
       ? confidenceMap.get(currentMember.id) ?? "dont_know"
@@ -1381,7 +1376,7 @@ export function SongsBoard() {
     const binaryCurrentConfidence = getBinaryConfidence(currentConfidence);
     const isCurrentMemberReady = binaryCurrentConfidence === "know_it";
     const songBucket = getSongBucket(song);
-    const isDraggable = Boolean(currentMember?.is_admin) && songBucket === "active";
+    const showSortHandle = canSortSetList && isSetListSortMode && songBucket === "active";
     const isDragSource = dragSongId === song.id && dragBucket === songBucket;
     const rowDropPosition =
       dropIndicator?.songId === song.id && dropIndicator.bucket === songBucket
@@ -1408,6 +1403,10 @@ export function SongsBoard() {
       : currentMemberVoteSet.has(song.id);
     const isMobileToastVisible =
       mobileReadinessToast?.songId === song.id ? ` is-visible is-${mobileReadinessToast.tone}` : "";
+    const rowNumberLabel =
+      typeof index === "number"
+        ? `${typeof setNumber === "number" ? `S${setNumber}-` : ""}${String(index + 1).padStart(2, "0")}`
+        : null;
 
     return (
       <li
@@ -1419,21 +1418,9 @@ export function SongsBoard() {
             songRowRefs.current.delete(song.id);
           }
         }}
-        className={`song-board-row${currentMember?.is_admin ? " has-actions" : ""}${isDraggable ? " is-draggable" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
-        draggable={isDraggable}
-        onDragStart={(event) => {
-          event.dataTransfer.effectAllowed = "move";
-          setDragSongId(song.id);
-          setDragBucket(songBucket);
-          setDropIndicator(null);
-        }}
-        onDragEnd={() => {
-          setDragSongId(null);
-          setDragBucket(null);
-          setDropIndicator(null);
-        }}
+        className={`song-board-row${currentMember?.is_admin ? " has-actions" : ""}${typeof index === "number" ? " has-row-number" : ""}${showSortHandle ? " is-draggable is-sort-mode" : ""}${isDragSource ? " is-drag-source" : ""}${rowDropPosition ? ` is-drop-target-${rowDropPosition}` : ""}`}
         onDragOver={(event) => {
-          if (isDraggable && dragBucket === songBucket) {
+          if (showSortHandle && dragBucket === songBucket) {
             event.preventDefault();
             const bounds = event.currentTarget.getBoundingClientRect();
             const position =
@@ -1481,21 +1468,9 @@ export function SongsBoard() {
       >
         <div className="song-board-content-rail">
           <div className="song-board-main">
-            {typeof index === "number" ? (
+            {rowNumberLabel ? (
               <span className="song-row-number" aria-hidden="true">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-            ) : null}
-            {isDraggable ? (
-              <span className="song-drag-handle" aria-hidden="true">
-                <svg viewBox="0 0 16 16" focusable="false">
-                  <circle cx="5" cy="4" r="1.2" />
-                  <circle cx="11" cy="4" r="1.2" />
-                  <circle cx="5" cy="8" r="1.2" />
-                  <circle cx="11" cy="8" r="1.2" />
-                  <circle cx="5" cy="12" r="1.2" />
-                  <circle cx="11" cy="12" r="1.2" />
-                </svg>
+                {rowNumberLabel}
               </span>
             ) : null}
             <div className="song-board-copy">
@@ -1535,67 +1510,101 @@ export function SongsBoard() {
         </div>
 
         <div className="song-board-action-rail">
-          <div className="song-board-readiness">
-            {currentMember?.can_vote && song.status !== "archived" ? (
-              <div className="song-board-readiness-toggle-wrap">
-                <button
-                  type="button"
-                  className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
-                  aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
-                  onClick={() => void toggleReadiness(song, currentConfidence)}
-                  disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
-                  >
-                    {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
-                      ? "Saving..."
-                      : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
-                          <span key={line} className="song-readiness-toggle-line">
-                            {line}
-                          </span>
-                        ))}
-                  </button>
-                <span className={`song-avatar-toast${isMobileToastVisible}`}>
-                  {mobileReadinessToast?.message}
-                </span>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="song-board-vote">
-            {(song.status === "suggested" ||
-              song.status === "active" ||
-              song.status === "selected") &&
-            currentMember ? (
-              <button
-                type="button"
-                className={`vote-chip vote-chip-vote vote-chip-vote-text${currentMemberHasVoted ? " is-active" : ""}`}
-                disabled={busyKey === `vote:${song.id}` || !currentMember.can_vote}
-                onClick={() => void toggleSuggestionVote(song)}
-                title={
-                  !currentMember.can_vote
-                    ? `${voteProgressLabel} voting members`
-                    : currentMemberHasVoted
-                      ? `Remove vote (${voteProgressLabel})`
-                      : `Vote in (${voteProgressLabel})`
-                }
-                aria-label={
-                  !currentMember.can_vote
-                    ? `${voteProgressLabel} voting members. Voting is disabled for this member.`
-                    : currentMemberHasVoted
-                      ? `Remove vote. ${voteProgressLabel} voting members.`
-                      : `Vote in. ${voteProgressLabel} voting members.`
-                }
-              >
-                <span className="vote-chip-vote-copy">
-                  {getVoteButtonLines(currentMemberHasVoted).map((line) => (
-                    <span key={line} className="vote-chip-vote-line">
-                      {line}
+          {showSortHandle ? (
+            <button
+              type="button"
+              className="song-board-sort-mask"
+              draggable
+              aria-label={`Drag to change the order of ${song.title}`}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = "move";
+                setDragSongId(song.id);
+                setDragBucket(songBucket);
+                setDropIndicator(null);
+              }}
+              onDragEnd={() => {
+                setDragSongId(null);
+                setDragBucket(null);
+                setDropIndicator(null);
+              }}
+            >
+              <span className="song-drag-handle" aria-hidden="true">
+                <svg viewBox="0 0 16 16" focusable="false">
+                  <circle cx="5" cy="4" r="1.2" />
+                  <circle cx="11" cy="4" r="1.2" />
+                  <circle cx="5" cy="8" r="1.2" />
+                  <circle cx="11" cy="8" r="1.2" />
+                  <circle cx="5" cy="12" r="1.2" />
+                  <circle cx="11" cy="12" r="1.2" />
+                </svg>
+              </span>
+              <span>Drag To Reorder</span>
+            </button>
+          ) : (
+            <>
+              <div className="song-board-readiness">
+                {currentMember?.can_vote && song.status !== "archived" ? (
+                  <div className="song-board-readiness-toggle-wrap">
+                    <button
+                      type="button"
+                      className={`song-readiness-toggle${isCurrentMemberReady ? " is-ready" : " is-not-ready"}`}
+                      aria-label={`Set your readiness for ${song.title}. Current status: ${getBinaryReadinessLabel(currentConfidence)}`}
+                      onClick={() => void toggleReadiness(song, currentConfidence)}
+                      disabled={busyKey?.startsWith(`confidence:${song.id}:`) ?? false}
+                      >
+                        {busyKey?.startsWith(`confidence:${song.id}:`) ?? false
+                          ? "Saving..."
+                          : getBinaryReadinessButtonLabel(currentConfidence).map((line) => (
+                              <span key={line} className="song-readiness-toggle-line">
+                                {line}
+                              </span>
+                            ))}
+                      </button>
+                    <span className={`song-avatar-toast${isMobileToastVisible}`}>
+                      {mobileReadinessToast?.message}
                     </span>
-                  ))}
-                </span>
-                <span className="vote-chip-vote-count">{voteProgressLabel}</span>
-              </button>
-            ) : null}
-          </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="song-board-vote">
+                {(song.status === "suggested" ||
+                  song.status === "active" ||
+                  song.status === "selected") &&
+                currentMember ? (
+                  <button
+                    type="button"
+                    className={`vote-chip vote-chip-vote vote-chip-vote-text${currentMemberHasVoted ? " is-active" : ""}`}
+                    disabled={busyKey === `vote:${song.id}` || !currentMember.can_vote}
+                    onClick={() => void toggleSuggestionVote(song)}
+                    title={
+                      !currentMember.can_vote
+                        ? `${voteProgressLabel} voting members`
+                        : currentMemberHasVoted
+                          ? `Remove vote (${voteProgressLabel})`
+                          : `Vote in (${voteProgressLabel})`
+                    }
+                    aria-label={
+                      !currentMember.can_vote
+                        ? `${voteProgressLabel} voting members. Voting is disabled for this member.`
+                        : currentMemberHasVoted
+                          ? `Remove vote. ${voteProgressLabel} voting members.`
+                          : `Vote in. ${voteProgressLabel} voting members.`
+                    }
+                  >
+                    <span className="vote-chip-vote-copy">
+                      {getVoteButtonLines(currentMemberHasVoted).map((line) => (
+                        <span key={line} className="vote-chip-vote-line">
+                          {line}
+                        </span>
+                      ))}
+                    </span>
+                    <span className="vote-chip-vote-count">{voteProgressLabel}</span>
+                  </button>
+                ) : null}
+              </div>
+            </>
+          )}
         </div>
 
         {currentMember?.is_admin ? (
@@ -1809,25 +1818,44 @@ export function SongsBoard() {
             {errorMessage ?? statusMessage ?? "Ready."}
           </p>
         </div>
-        <p className="songs-mobile-readiness-note">
-          Tap the readiness button in each song row to update your status.
-        </p>
-        {renderSongsBoardLegend()}
       </div>
 
       <article className="panel section">
-        <div className="section-heading section-heading-with-actions">
-          <h2>Active Set List</h2>
-          <button type="button" className="section-action" onClick={exportActiveSetList}>
-            Export PDF
-          </button>
+        <div className="section-heading section-heading-with-actions section-heading-with-inline-actions">
+          <h2>Set List</h2>
+          <div className="section-actions">
+            {canSortSetList && activeSongs.length > 1 ? (
+              <button
+                type="button"
+                className={`section-action${isSetListSortMode ? " is-active" : ""}`}
+                onClick={() => {
+                  setIsSetListSortMode((current) => !current);
+                  setDragSongId(null);
+                  setDragBucket(null);
+                  setDropIndicator(null);
+                }}
+              >
+                {isSetListSortMode ? "Done" : "Change Order"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="section-action section-action-utility"
+              onClick={exportActiveSetList}
+            >
+              Export PDF
+            </button>
+          </div>
         </div>
         {loading ? (
           <p className="songs-auth-copy">Loading the current working set...</p>
         ) : activeSongs.length > 0 ? (
           <div className="active-set-grid">
             {activeSets.map((setGroup) => (
-              <section key={setGroup.label} className="active-set-card">
+              <section
+                key={setGroup.label}
+                className={`active-set-card active-set-card-${setGroup.setNumber}`}
+              >
                 <div className="active-set-heading">
                   <h3>{setGroup.label}</h3>
                   <span>
@@ -1839,27 +1867,34 @@ export function SongsBoard() {
                     {renderSongsBoardHeaders(Boolean(currentMember?.is_admin))}
                     <ol className="songs-board-list songs-board-list-numbered">
                       {setGroup.songs.map((song, index) =>
-                        renderSongRow(song, index),
+                        renderSongRow(song, {
+                          index,
+                          setNumber: setGroup.setNumber,
+                        }),
                       )}
                     </ol>
                   </>
                 ) : (
                   <div
                     className={`active-set-dropzone${
-                      dragBucket === "active" ? " is-active" : ""
+                      dragBucket === "active" && isSetListSortMode ? " is-active" : ""
                     }`}
                     onDragOver={(event) => {
-                      if (dragBucket === "active") {
+                      if (dragBucket === "active" && isSetListSortMode) {
                         event.preventDefault();
                       }
                     }}
                     onDrop={() => {
-                      if (dragSongId && dragBucket === "active") {
+                      if (dragSongId && dragBucket === "active" && isSetListSortMode) {
                         void moveActiveSongToSet(dragSongId, setGroup.setNumber);
                       }
                     }}
                   >
-                    <p className="songs-auth-copy">Drag a song here to place it in this set.</p>
+                    <p className="songs-auth-copy">
+                      {isSetListSortMode
+                        ? "Drag a song here to place it in this set."
+                        : "No songs are assigned to this set yet."}
+                    </p>
                   </div>
                 )}
               </section>
@@ -1873,7 +1908,11 @@ export function SongsBoard() {
       <article className="panel section">
         <div className="section-heading section-heading-with-actions">
           <h2>Suggested Songs</h2>
-          <button type="button" className="section-action" onClick={exportSuggestedSongs}>
+          <button
+            type="button"
+            className="section-action section-action-utility"
+            onClick={exportSuggestedSongs}
+          >
             Export PDF
           </button>
         </div>

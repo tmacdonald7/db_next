@@ -725,6 +725,23 @@ pre {
   right: 35%;
 }
 
+.section-heading-with-inline-actions {
+  flex-wrap: nowrap;
+}
+
+.section-heading-with-inline-actions .section-actions {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+}
+
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
 .section-action {
   flex: 0 0 auto;
   border: 1px solid rgba(212, 163, 115, 0.22);
@@ -748,6 +765,31 @@ pre {
   border-color: rgba(212, 163, 115, 0.42);
   transform: translateY(-1px);
   box-shadow: 0 0 16px rgba(200, 90, 17, 0.08);
+}
+
+.section-action.is-active {
+  color: var(--foreground);
+  border-color: rgba(212, 163, 115, 0.46);
+  background: linear-gradient(
+    180deg,
+    rgba(200, 90, 17, 0.18) 0%,
+    rgba(29, 36, 48, 0.94) 100%
+  );
+  box-shadow: 0 0 18px rgba(200, 90, 17, 0.12);
+}
+
+.section-action-utility {
+  background: transparent;
+  border-color: transparent;
+  color: rgba(234, 223, 208, 0.82);
+  box-shadow: none;
+  padding-right: 0;
+}
+
+.section-action-utility:hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .panel {
@@ -1430,7 +1472,7 @@ pre {
 
 .songs-controls-panel {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.72rem;
   margin-top: 1rem;
   padding: 0.35rem 0 0;
 }
@@ -1489,13 +1531,45 @@ pre {
 }
 
 .active-set-card {
+  --active-set-accent: rgba(212, 163, 115, 0.16);
+  --active-set-sheen: rgba(212, 163, 115, 0.05);
   display: grid;
   gap: 0.75rem;
-  padding: 0;
+  padding: 0.2rem 0.35rem 0.25rem;
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(
+      180deg,
+      var(--active-set-sheen) 0%,
+      rgba(18, 22, 29, 0) 42%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(244, 239, 230, 0.02),
+    inset 0 0 0 1px rgba(212, 163, 115, 0.03);
 }
 
 .active-set-card-overflow {
   grid-column: 1 / -1;
+}
+
+.active-set-card-1 {
+  --active-set-accent: rgba(212, 163, 115, 0.2);
+  --active-set-sheen: rgba(212, 163, 115, 0.05);
+}
+
+.active-set-card-2 {
+  --active-set-accent: rgba(118, 185, 92, 0.16);
+  --active-set-sheen: rgba(118, 185, 92, 0.04);
+}
+
+.active-set-card-3 {
+  --active-set-accent: rgba(102, 150, 194, 0.16);
+  --active-set-sheen: rgba(102, 150, 194, 0.04);
+}
+
+.active-set-card-4 {
+  --active-set-accent: rgba(190, 126, 196, 0.14);
+  --active-set-sheen: rgba(190, 126, 196, 0.035);
 }
 
 .active-set-heading {
@@ -1604,14 +1678,21 @@ pre {
 }
 
 .song-board-main {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
 }
 
+.song-board-row.has-row-number .song-board-main {
+  padding-right: 2.4rem;
+}
+
 .song-row-number {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 0;
+  right: 0;
   min-width: 1.9rem;
   padding: 0.18rem 0.32rem;
   border-radius: 0.55rem;
@@ -1641,6 +1722,46 @@ pre {
   height: 0.9rem;
   fill: currentColor;
   display: block;
+}
+
+.song-board-sort-mask {
+  appearance: none;
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border: 1px dashed rgba(212, 163, 115, 0.46);
+  border-radius: 0.9rem;
+  background: linear-gradient(
+    180deg,
+    rgba(34, 40, 52, 0.96) 0%,
+    rgba(18, 22, 29, 0.98) 100%
+  );
+  color: var(--secondary-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  font-family: var(--font-display-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 8px 18px rgba(0, 0, 0, 0.14);
+  cursor: grab;
+}
+
+.song-board-sort-mask:active {
+  cursor: grabbing;
+}
+
+.song-board-sort-mask .song-drag-handle {
+  width: auto;
+  flex: 0 0 auto;
+  opacity: 0.9;
 }
 
 .song-board-copy {
@@ -2039,56 +2160,6 @@ pre {
   margin-bottom: 1rem;
 }
 
-.songs-mobile-readiness-note {
-  margin: -0.15rem 0 0;
-  color: var(--foreground-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.songs-board-legend {
-  display: grid;
-  gap: 0.5rem;
-  padding-top: 0.2rem;
-}
-
-.songs-board-legend-title {
-  margin: 0;
-  color: var(--secondary-soft);
-  font-family: var(--font-display-secondary);
-  font-size: 0.74rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.songs-board-legend-items {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.9rem;
-}
-
-.songs-board-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.38rem;
-  color: var(--foreground-muted);
-  font-size: 0.78rem;
-  line-height: 1.2;
-}
-
-.songs-board-legend-item-note {
-  color: var(--secondary-soft);
-}
-
-.songs-board-legend-swatch {
-  width: 1.15rem;
-  height: 1.15rem;
-  min-width: 1.15rem;
-  font-size: 0.46rem;
-  box-shadow: none;
-}
-
 .songs-board-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) 3.8rem minmax(6.2rem, auto) minmax(8.4rem, auto);
@@ -2313,6 +2384,11 @@ pre {
     flex-direction: column;
   }
 
+  .section-heading-with-inline-actions {
+    align-items: center;
+    flex-direction: row;
+  }
+
   .section-heading-with-actions::after {
     right: 0;
   }
@@ -2347,18 +2423,6 @@ pre {
   .songs-board-columns,
   .songs-board-columns.has-actions {
     display: none;
-  }
-
-  .songs-board-legend {
-    gap: 0.42rem;
-  }
-
-  .songs-board-legend-items {
-    gap: 0.42rem 0.7rem;
-  }
-
-  .songs-board-legend-item {
-    font-size: 0.74rem;
   }
 
   .song-board-actions {
@@ -2437,7 +2501,13 @@ pre {
     padding: 0;
   }
 
+  .song-board-row.has-row-number .song-board-main {
+    padding-right: 2rem;
+  }
+
   .song-row-number {
+    top: 0.02rem;
+    right: 0;
     min-width: 1.55rem;
     padding: 0.14rem 0.24rem;
     font-size: 0.64rem;
@@ -2509,7 +2579,7 @@ pre {
   .song-board-status-label {
     display: inline-block;
     flex: 0 0 auto;
-    width: fit-content;
+    width: min-content;
     color: var(--foreground-muted);
     font-family: var(--font-display-secondary);
     font-size: 0.62rem;
@@ -2517,7 +2587,7 @@ pre {
     text-transform: uppercase;
     white-space: normal;
     line-height: 1.05;
-    max-width: none;
+    max-width: 3rem;
     text-align: left;
   }
 
