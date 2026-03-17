@@ -1408,7 +1408,7 @@ export function SongsBoard() {
       mobileReadinessToast?.songId === song.id ? ` is-visible is-${mobileReadinessToast.tone}` : "";
     const rowNumberLabel =
       typeof index === "number"
-        ? `${typeof setNumber === "number" ? `S${setNumber}-` : ""}${String(index + 1).padStart(2, "0")}`
+        ? `${typeof setNumber === "number" ? `S${setNumber}-` : ""}${index + 1}`
         : null;
 
     return (
@@ -1470,7 +1470,7 @@ export function SongsBoard() {
         }}
       >
         <div className="song-board-content-rail">
-          <div className="song-board-main">
+          <div className={`song-board-main${rowNumberLabel ? " has-row-number" : ""}`}>
             {rowNumberLabel ? (
               <span className="song-row-number" aria-hidden="true">
                 {rowNumberLabel}

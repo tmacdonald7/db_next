@@ -1527,7 +1527,7 @@ pre {
 .active-set-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .active-set-card {
@@ -1535,7 +1535,7 @@ pre {
   --active-set-sheen: rgba(212, 163, 115, 0.05);
   display: grid;
   gap: 0.75rem;
-  padding: 0.2rem 0.35rem 0.25rem;
+  padding: 0;
   border-radius: 0.95rem;
   background:
     linear-gradient(
@@ -1587,14 +1587,23 @@ pre {
 
 .active-set-heading h3 {
   font-size: 1rem;
+  font-weight: 700;
   color: var(--foreground);
 }
 
 .active-set-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
   color: var(--foreground-muted);
-  font-size: 0.72rem;
+  font-size: 1rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.active-set-heading span::before {
+  content: "\2014";
+  color: color-mix(in srgb, var(--foreground-muted) 72%, transparent);
 }
 
 .song-board-row {
@@ -1685,22 +1694,23 @@ pre {
   min-width: 0;
 }
 
-.song-board-row.has-row-number .song-board-main {
-  padding-right: 2.4rem;
+.song-board-main.has-row-number {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.22rem;
 }
 
 .song-row-number {
-  position: absolute;
-  top: 0;
-  right: 0;
-  min-width: 1.9rem;
-  padding: 0.18rem 0.32rem;
-  border-radius: 0.55rem;
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
   border: 1px solid rgba(212, 163, 115, 0.14);
-  background: rgba(18, 22, 29, 0.74);
   color: var(--secondary-soft);
   font-family: var(--font-body);
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.03em;
@@ -2422,6 +2432,27 @@ pre {
     grid-template-columns: 1fr;
   }
 
+  .active-set-card {
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .active-set-heading {
+    align-items: center;
+    justify-content: center;
+    padding: 0.52rem 0.62rem 0.48rem;
+    border-top: 1px solid color-mix(in srgb, var(--active-set-accent) 100%, rgba(244, 239, 230, 0.2));
+    border-bottom: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--active-set-accent) 60%, transparent) 0%,
+      color-mix(in srgb, var(--active-set-sheen) 85%, transparent) 48%,
+      transparent 100%
+    );
+    text-align: center;
+  }
+
   .songs-voting-item {
     grid-template-columns: 2.9rem 1fr;
     gap: 0.75rem;
@@ -2513,16 +2544,13 @@ pre {
     padding: 0;
   }
 
-  .song-board-row.has-row-number .song-board-main {
-    padding-right: 2rem;
+  .song-board-main.has-row-number {
+    gap: 0.14rem;
   }
 
   .song-row-number {
-    top: 0.02rem;
-    right: 0;
-    min-width: 1.55rem;
-    padding: 0.14rem 0.24rem;
-    font-size: 0.64rem;
+    min-width: 0;
+    font-size: 0.98rem;
   }
 
   .song-board-title {
