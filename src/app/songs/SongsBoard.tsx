@@ -160,7 +160,7 @@ function renderSongsBoardHeaders(showActions: boolean) {
       <span className="songs-board-columns-song">Song</span>
       <span className="songs-board-columns-metric">Set List?</span>
       <span className="songs-board-columns-metric">You Gig Ready?</span>
-      <span className="songs-board-columns-metric">Who's Ready</span>
+      <span className="songs-board-columns-metric">Who&apos;s Ready</span>
       {showActions ? <span className="songs-board-columns-actions">Actions</span> : null}
     </div>
   );
