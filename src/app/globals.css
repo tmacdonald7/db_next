@@ -1671,6 +1671,10 @@ pre {
   min-width: 0;
 }
 
+.song-board-status-label {
+  display: none;
+}
+
 .song-board-avatars {
   display: flex;
   flex-wrap: nowrap;
@@ -1820,7 +1824,7 @@ pre {
   appearance: none;
   min-width: 6.2rem;
   border: 1px solid rgba(212, 163, 115, 0.24);
-  border-radius: 999px;
+  border-radius: 0.9rem;
   padding: 0.4rem 0.82rem;
   background: rgba(18, 22, 29, 0.96);
   color: var(--foreground);
@@ -1907,7 +1911,7 @@ pre {
 
 .vote-chip {
   border: 1px solid rgba(212, 163, 115, 0.18);
-  border-radius: 999px;
+  border-radius: 0.9rem;
   background: rgba(18, 22, 29, 0.9);
 }
 
@@ -2336,7 +2340,7 @@ pre {
   }
 
   .song-board-row {
-    grid-template-columns: minmax(0, 1fr) 6.55rem 3.65rem;
+    grid-template-columns: minmax(0, 1fr) 4.9rem 3.2rem;
     grid-template-areas:
       "main readiness vote"
       "status readiness vote";
@@ -2345,7 +2349,7 @@ pre {
   }
 
   .song-board-row.has-actions {
-    grid-template-columns: minmax(0, 1fr) 6.55rem 3.65rem auto;
+    grid-template-columns: minmax(0, 1fr) 4.9rem 3.2rem auto;
     grid-template-areas:
       "main readiness vote actions"
       "status readiness vote actions";
@@ -2396,13 +2400,13 @@ pre {
 
   .song-board-vote {
     grid-area: vote;
-    justify-content: stretch;
+    justify-content: flex-end;
     align-self: stretch;
   }
 
   .song-board-readiness {
     grid-area: readiness;
-    justify-content: stretch;
+    justify-content: flex-end;
     align-self: stretch;
   }
 
@@ -2410,6 +2414,19 @@ pre {
     grid-area: status;
     justify-content: flex-start;
     align-self: center;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+  }
+
+  .song-board-status-label {
+    display: inline;
+    flex: 0 0 auto;
+    color: var(--foreground-muted);
+    font-family: var(--font-display-secondary);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .song-board-actions {
@@ -2425,10 +2442,13 @@ pre {
   .song-readiness-toggle {
     width: 100%;
     height: 100%;
-    min-width: 6.55rem;
+    min-width: 4.9rem;
     min-height: 3.65rem;
-    padding: 0.45rem 0.7rem;
-    font-size: 0.82rem;
+    padding: 0.4rem 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1.05;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .song-board-avatars {
@@ -2456,7 +2476,7 @@ pre {
 
   .vote-chip-vote {
     width: 100%;
-    min-width: 3.65rem;
+    min-width: 3.2rem;
     min-height: 3.65rem;
   }
 

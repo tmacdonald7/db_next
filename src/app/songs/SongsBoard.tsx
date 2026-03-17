@@ -1548,6 +1548,7 @@ export function SongsBoard() {
         </div>
 
         <div className="song-board-status">
+          <span className="song-board-status-label">Who&apos;s Ready:</span>
           <div className="song-board-avatars">
           {visibleVotingMembers.map((member) => {
             const confidence = confidenceMap.get(member.id) ?? "dont_know";
